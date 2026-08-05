@@ -1,4 +1,4 @@
-Hola Estrellitas,
+WEB PLANNER PARA TAREAS - 
 
 Este proyecto se trata de una Web planificador de tareas. Estare usando Figma,  HTML5, Bootstrap 5 y CSS para iniciar. 
 

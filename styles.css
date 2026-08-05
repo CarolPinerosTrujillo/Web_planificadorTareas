@@ -1,0 +1,85 @@
+body {
+  background-color: #f1f3f5;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* NAVBAR */
+.navbar-custom {
+  background: linear-gradient(90deg, #000000, #4c2372);
+}
+
+/* HEADER */
+.header-main {
+  background: linear-gradient(90deg, #d90429, #3a0ca3);
+  padding: 25px;
+  color: white;
+  border-radius: 0 0 20px 20px;
+}
+
+/* LOGO */
+.logo-header {
+  width: 70px;
+}
+
+/* FORM */
+.form-card {
+  background: linear-gradient(180deg, #ffffff, #f8f9fa);
+  border-radius: 15px;
+}
+
+/* BOTÓN */
+.btn-gradient {
+  background: linear-gradient(90deg, #d90429, #3a0ca3);
+  color: white;
+  border: none;
+}
+
+.btn-gradient:hover {
+  opacity: 0.9;
+}
+
+/* FILTROS */
+.filter-bar {
+  background: linear-gradient(90deg, #d90429, #06d6a0, #3a86ff);
+  padding: 5px;
+  border-radius: 20px;
+}
+
+.filtro {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: white;
+  font-weight: 500;
+}
+
+.filtro.active {
+  background: rgba(255,255,255,0.2);
+  border-radius: 20px;
+}
+
+/* CARDS */
+.task-card {
+  border-radius: 12px;
+  border: none;
+  color: white;
+  transition: transform 0.2s;
+}
+
+.task-card:hover {
+  transform: scale(1.03);
+}
+
+/* ESTADOS */
+.estado-pendiente {
+  background: #6c757d;
+}
+
+.estado-proceso {
+  background: #ffb703;
+  color: black;
+}
+
+.estado-terminado {
+  background: #06d6a0;
+}
