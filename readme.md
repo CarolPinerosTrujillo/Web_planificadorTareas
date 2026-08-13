@@ -2,7 +2,7 @@
   <img src="./img/planificador.png" alt="PlannerApp" width="180">
 </p>
 
-# 📅 Web Planner para Tareas
+# 📅 Web Planner para Tareas Carol PlannerApp 📅
 
 Una aplicación web enfocada en la organización y planificación de tareas diarias. Este proyecto busca ofrecer una interfaz intuitiva y visualmente atractiva para registrar, clasificar y gestionar actividades de manera sencilla.
 
