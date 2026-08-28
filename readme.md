@@ -116,8 +116,6 @@ Este proyecto hace parte de mi proceso de aprendizaje en desarrollo Frontend y t
 
 **Carol Piñeros**
 
-Desarrolladora Frontend en formación, enfocada en crear aplicaciones web funcionales, modernas y con una buena experiencia de usuario.
+Developer en formación, enfocada en crear aplicaciones web funcionales, modernas y con una buena experiencia de usuario.
 
 ---
-
-⭐ Si te gusta este proyecto, no olvides dejar una estrella en el repositorio.

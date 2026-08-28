@@ -73,11 +73,8 @@ formulario.addEventListener('submit', function (event) {
 
 //VALIDACION DE FECHA 
 const fechaSeleccionada = data.fecha;
-
 const hoy = new Date().toISOString().split("T")[0];
 const fechaMaxima = "2100-12-31";
-
-
   
   mensajeError.classList.add("d-none");
   Swal.fire({
@@ -100,3 +97,7 @@ function configurarFecha() {
     fechaTarea.max = "2100-12-31";
 
 }
+
+//INICIO SPRINT2
+const taskManager = new TaskManager();
+console.log(taskManager.tasks);

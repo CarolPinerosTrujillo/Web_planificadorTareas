@@ -5,57 +5,44 @@ body {
 
 
 .form-card{
-
     border-radius:28px;
     padding:30px;
     background:linear-gradient(180deg,#ffffff,#f4f1f8);
-
 }
 
 .titulo-formulario{
-
     font-weight:700;
     color:#3d1e84;
     margin-bottom:25px;
-
 }
 
 .form-label{
-
     font-weight:600;
     color:#343a40;
     margin-bottom:8px;
-
 }
 
 .input-group{
-
     margin-bottom:18px;
-
 }
 
 .icon-box{
-
     background:#f3f0ff;
     border:1px solid #dee2e6;
     width:52px;
     display:flex;
     justify-content:center;
     align-items:center;
-
 }
 
 .input-icon{
-
     width:24px;
     height:24px;
     object-fit:contain;
-
 }
 
 .form-control,
 .form-select{
-
     border-left:none;
     border-radius:0 12px 12px 0;
     height:48px;
@@ -64,19 +51,16 @@ body {
 
 .form-control:focus,
 .form-select:focus{
-
     box-shadow:0 0 0 .2rem rgba(64, 46, 122, 0.18);
     border-color:#6d4cff;
 
 }
 
 .btn-gradient{
-
     border-radius:14px;
     padding:12px;
     font-weight:600;
     font-size:1rem;
-
 }
 
 /* NAVBAR */
@@ -87,20 +71,14 @@ body {
 
 /* HEADER */
 .header-main{
-
-padding:30px;
-
-border-radius:0 0 35px 30px;
-
-background:linear-gradient(90deg, #000000, #4c2372);
-
+    padding:30px;
+    border-radius:0 0 35px 30px;
+    background:linear-gradient(90deg, #000000, #4c2372);
 }
 
 /* LOGO */
 .logo-header{
-
 width:90px;
-
 transition:.3s;
 
 }
@@ -183,260 +161,180 @@ box-shadow:0 15px 30px rgba(0,0,0,.18);
 /* LISTADO */
 
 .filter-bar{
-
     display:flex;
     gap:10px;
     flex-wrap:wrap;
-
     background:rgb(140, 138, 202);
-
     padding:10px;
-
     border-radius:20px;
-
     box-shadow:0 8px 20px rgba(0,0,0,.08);
-
 }
 
 .filtro{
-
     flex:1;
-
     min-width:120px;
-
     border:none;
-
     border-radius:30px;
-
     background:#ececec;
-
     color:#444;
-
     font-weight:600;
-
     transition:.3s;
-
 }
 
 .filtro:hover{
-
     transform:translateY(-2px);
-
 }
 
 .filtro.active{
-
     background:linear-gradient(90deg, #000000, #4c2372);
-
     color:white;
-
 }
 
 /* TITULOS */
 
 .estado-title{
-
     text-align:center;
-
     margin-bottom:20px;
-
     font-weight:700;
-
 }
 
 .pendiente{
-
     color:#6c757d;
-
 }
 
 .proceso{
-
     color:#f59e0b;
-
 }
 
 .terminado{
-
     color:#06d6a0;
-
 }
 
 /* TARJETAS */
-
 .task-card{
-
     padding:18px;
-
     border-radius:18px;
-
     margin-bottom:18px;
-
     min-height:125px;
-
     display:flex;
-
     flex-direction:column;
-
     justify-content:space-between;
-
     transition:.3s;
-
     cursor:pointer;
-
     color:white;
-
     box-shadow:0 8px 20px rgba(0,0,0,.10);
-
 }
 
 .task-card:hover{
-
     transform:translateY(-5px);
-
     box-shadow:0 18px 35px rgba(0,0,0,.18);
-
 }
 
 .task-card h6{
-
     margin-bottom:10px;
-
     font-weight:700;
-
     font-size:1rem;
-
 }
 
 .task-card p{
-
     margin-bottom:12px;
-
     font-size:.90rem;
-
     opacity:.9;
-
 }
 
 .estado-pendiente{
-
     background:linear-gradient(135deg,#f34e0d,#505963);
-
 }
 
 .estado-proceso{
-
     background:linear-gradient(135deg,#561aef,#3d3b34);
-
     color:#ffffff;
-
 }
 
 .estado-terminado{
-
     background:linear-gradient(135deg,#18d8b4,#02513d);
-
 }
 
 /* BADGE */
-
 .categoria{
-
     align-self:flex-start;
-
     background:rgb(9, 149, 18);
-
     color:#e4dcdc;
-
     border-radius:30px;
-
     padding:6px 14px;
-
     font-size:.75rem;
-
 }
 
 /* RESPONSIVE */
-
 @media (max-width:992px){
-
 .filter-bar{
-
 justify-content:center;
-
 }
-
 .filtro{
-
 flex:unset;
-
 width:45%;
-
 }
-
 }
 
 @media (max-width:576px){
-
 .filtro{
-
 width:100%;
-
 }
-
 .task-card{
-
 min-height:auto;
-
 }
-
 }
-
-
 
 /* //COLORES DE CATEGORÍAS */
-.categoria-estudio{
+.categoria-estudio{background:#7b2cbf;}
+.categoria-trabajo{background:#3a86ff;}
+.categoria-casa{background:#097d5a;}
+.categoria-ejercicio{background:#ef233c;}
+.categoria-compras{background:#ffb703;color:#222;}
+.categoria-finanzas{background:#f77f00;}
+.categoria-personal{background:#d63384;}
 
-background:#7b2cbf;
+
+
+.btnEstado{
+width:100%;
+margin-top:5px;
+padding:5px;
+border:none;
+border-radius:12px;
+background: #048865;
+color:#fff;
+font-weight:400;
+font-size:.95rem;
+transition:.3s ease;
+display:flex;
+align-items:center;
+justify-content:center;
+gap:8px;
+box-shadow:0 4px 12px rgba(58,12,163,.25);
+}
+
+.btnEstado:hover{
+transform:translateY(-2px);
+box-shadow:0 8px 18px rgba(58,12,163,.35);
+background:#02513d;
+color:#fff;
+}
+
+.btnEstado:active{
+transform:scale(.97);
+}
+
+.btnEstado i{
+font-size:1rem;
+}
+
+/* CAMBIO DE ESTADO A COMPLETADA */
+.tarea-completada{
+opacity:.6;
+filter:grayscale(100%);
+text-decoration:line-through;
+transform:scale(.98);
 
 }
 
-.categoria-trabajo{
-
-background:#3a86ff;
-
-}
-
-.categoria-casa{
-
-background:#097d5a;
-
-}
-
-.categoria-ejercicio{
-
-background:#ef233c;
-
-}
-
-
-
-.categoria-compras{
-
-background:#ffb703;
-
-color:#222;
-
-}
-
-.categoria-finanzas{
-
-background:#f77f00;
-
-}
-
-.categoria-personal{
-
-background:#d63384;
-
-}
