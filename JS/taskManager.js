@@ -20,6 +20,8 @@ class TaskManager {
     }
 }
 
+
+//sprint 2 tarea 4
 const botonesEstado = document.querySelectorAll(".btnEstado");
 
 botonesEstado.forEach(function (boton) {
