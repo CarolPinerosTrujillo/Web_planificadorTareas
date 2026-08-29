@@ -1,6 +1,9 @@
 // inicio en construcción
 const formulario = document.querySelector("#formularioTareas");
 
+//SPRINT 2 TAREA 4-5
+const taskManager = new TaskManager();
+
 // ELEMENTOS
 const nombreTarea = document.querySelector('#nombreTarea');
 const descripcionTarea = document.querySelector('#descripcionTarea');
@@ -27,9 +30,8 @@ function validFormFieldInput(data) {
   const prioridad = data.prioridad.trim();
   const estado = data.estado.trim();
 
-  if (nombre === '' || descripcion === '' || categoria === '' || fecha === '' || hora === '' || prioridad === '' || estado === '') {
-    return false;
-  }
+
+  if (nombre === '' || descripcion === '' || categoria === '' || fecha === '' || hora === '' || prioridad === '' || estado === '') { return false; }
   return true;
 }
 
@@ -55,12 +57,9 @@ formulario.addEventListener('submit', function (event) {
     estado
   };
 
-  console.log(data);
+  console.log("Datos del formulario:", data);
 
-
-
-
-  if (!validFormFieldInput(data)) {
+   if (!validFormFieldInput(data)) {
     mensajeError.classList.remove("d-none");
 
     Swal.fire({
@@ -71,33 +70,73 @@ formulario.addEventListener('submit', function (event) {
     return;
   }
 
-//VALIDACION DE FECHA 
-const fechaSeleccionada = data.fecha;
-const hoy = new Date().toISOString().split("T")[0];
-const fechaMaxima = "2100-12-31";
-  
-  mensajeError.classList.add("d-none");
-  Swal.fire({
-    icon: "success",
-    title: "Tarea agregada con éxito",
-    text: "La tarea fue registrada correctamente."
-  }).then(() => {
-    formulario.reset();
-  });
+  //VALIDACION DE FECHA 
+  const fechaSeleccionada = data.fecha;
+  const hoy = new Date().toISOString().split("T")[0];
+  const fechaMaxima = "2100-12-31";
+
+ if (fechaSeleccionada <= hoy || fechaSeleccionada > fechaMaxima) {
+        mensajeError.classList.remove("d-none");
+        Swal.fire({
+            icon: "error",
+            title: "Fecha inválida",
+            text: "La fecha debe estar entre hoy y el 31 de diciembre de 2100."
+        });
+        return;
+    }
+
+// *Si todo está correcto, ocultar mensaje de error*
+     mensajeError.classList.add("d-none");
+
+
+
+  //SPRINT 2 TAREA 5 - ESTADO INICIAL
+  const status = 'PORHACER';
+
+ // Registrar la tarea
+    taskManager.addTask(
+        nombre,
+        descripcion,
+        fecha,
+        status
+    );
+
+    // Mostrar tareas en consola
+    console.log("Tareas registradas:", taskManager.tasks);
+ 
+    // *Mensaje de éxito*
+    Swal.fire({
+        icon: "success",
+        title: "Tarea agregada con éxito",
+        text: "La tarea fue registrada correctamente."
+
+    }).then(() => {
+        // Limpiar formulario
+        formulario.reset();
+        // Volver a configurar fecha mínima
+        configurarFecha();
+
+    });
+
 });
+
 
 
 function configurarFecha() {
 
-    const hoy = new Date();
-    const fechaHoy = hoy.toISOString().split("T")[0];
-
-    fechaTarea.min = fechaHoy;
-
-    fechaTarea.max = "2100-12-31";
-
+  const hoy = new Date();
+  const fechaHoy = hoy.toISOString().split("T")[0];
+  fechaTarea.min = fechaHoy;
+  fechaTarea.max = "2100-12-31";
 }
 
-//INICIO SPRINT2
-const taskManager = new TaskManager();
-console.log(taskManager.tasks);
+
+// //PRUEBA AGREGAR TAREA 
+// taskManager.addTask(
+//   'Sacar la basura',
+//   'Sacar la basura al frente de la casa',
+//   '2020-09-20',
+//   'PORHACER'
+// );
+
+// console.log(taskManager.tasks);

@@ -1,6 +1,22 @@
 class TaskManager {
-    constructor() {
+    constructor(currentId=0) {
         this.tasks = [];
+        this.currentId = currentId;
+    }
+
+    addTask(name, description, dueDate, status) {
+
+        // aumento el ID antes de crear la tarea
+        this.currentId++;
+
+        // creacion y guardado de la tarea
+        this.tasks.push({
+            id: this.currentId,
+            name: name,
+            description: description,
+            dueDate: dueDate,
+            status: 'PORHACER'
+        });
     }
 }
 
