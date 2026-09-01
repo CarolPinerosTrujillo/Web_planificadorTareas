@@ -35,3 +35,28 @@ botonesEstado.forEach(function (boton) {
         }
     });
 });
+
+
+function createTaskHtml(task){
+return`
+<div class="card task-card estado-pendiente">
+    <div class="card-body">
+    <h6 class="tituloTarea">${task.nombre}</h6>
+    <p>${task.descripcion}</p>
+    <p>${task.fecha} • ${task.hora}</p>
+    <span class="badge categoria categoria-estudio">${task.categoria}</span>
+    <button class="btn btn-outline-light btnEstado">Completar</button>
+    <button class="delete-button btn btn-danger">Eliminar</button>
+    </div>
+</div>
+
+`;
+
+}
+
+
+
+
+function deleteTask(taskId) { 
+    const newTasks = []; 
+    for (let task of this.tasks) { if (task.id !== taskId) { newTasks.push(task); } } this.tasks = newTasks; }

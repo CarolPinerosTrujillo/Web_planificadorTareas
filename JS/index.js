@@ -1,4 +1,3 @@
-// inicio en construcción
 const formulario = document.querySelector("#formularioTareas");
 
 //SPRINT 2 TAREA 4-5
@@ -13,6 +12,7 @@ const horaTarea = document.querySelector('#horaTarea');
 const prioridadTarea = document.querySelector('#prioridadTarea');
 const estadoTarea = document.querySelector('#estadoTarea');
 const mensajeError = document.querySelector("#mensajeError");
+
 
 const btn = document.querySelector("#btnAgregarTarea");
 
