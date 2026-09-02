@@ -1,7 +1,5 @@
 const formulario = document.querySelector("#formularioTareas");
 
-//SPRINT 2 TAREA 4-5
-const taskManager = new TaskManager();
 
 // ELEMENTOS
 const nombreTarea = document.querySelector('#nombreTarea');
@@ -10,14 +8,19 @@ const categoriaTarea = document.querySelector('#categoriaTarea');
 const fechaTarea = document.querySelector('#fechaTarea');
 const horaTarea = document.querySelector('#horaTarea');
 const prioridadTarea = document.querySelector('#prioridadTarea');
-const estadoTarea = document.querySelector('#estadoTarea');
 const mensajeError = document.querySelector("#mensajeError");
+//const btn = document.querySelector("#btnAgregarTarea");
+
+//ubicacion de las tareas 
+const listaTareas = document.querySelector("#listaTareas");
 
 
-const btn = document.querySelector("#btnAgregarTarea");
-
+//SPRINT 2 TAREA 4-5
+const taskManager = new TaskManager();
+taskManager.load();
 // Configura el input fecha
 configurarFecha();
+render();
 
 // Implementación de la validación
 function validFormFieldInput(data) {
@@ -28,10 +31,8 @@ function validFormFieldInput(data) {
   const fecha = data.fecha.trim();
   const hora = data.hora.trim();
   const prioridad = data.prioridad.trim();
-  const estado = data.estado.trim();
 
-
-  if (nombre === '' || descripcion === '' || categoria === '' || fecha === '' || hora === '' || prioridad === '' || estado === '') { return false; }
+  if (nombre === '' || descripcion === '' || categoria === '' || fecha === '' || hora === '' || prioridad === '' ) { return false; }
   return true;
 }
 
@@ -45,8 +46,7 @@ formulario.addEventListener('submit', function (event) {
   const fecha = fechaTarea.value;
   const hora = horaTarea.value;
   const prioridad = prioridadTarea.value;
-  const estado = estadoTarea.value;
-
+  
   const data = {
     nombre,
     descripcion,
@@ -54,7 +54,6 @@ formulario.addEventListener('submit', function (event) {
     fecha,
     hora,
     prioridad,
-    estado
   };
 
   console.log("Datos del formulario:", data);
@@ -65,7 +64,7 @@ formulario.addEventListener('submit', function (event) {
     Swal.fire({
       icon: 'error',
       title: 'Datos inválidos',
-      text: 'Por favor completa todos los campos: Nombre, Descripción, Categoría, Fecha, Hora, Prioridad y Estado.'
+      text: 'Por favor completa todos los campos: Nombre, Descripción, Categoría, Fecha, Hora, y Prioridad de la tarea.'
     });
     return;
   }
@@ -75,7 +74,7 @@ formulario.addEventListener('submit', function (event) {
   const hoy = new Date().toISOString().split("T")[0];
   const fechaMaxima = "2100-12-31";
 
- if (fechaSeleccionada <= hoy || fechaSeleccionada > fechaMaxima) {
+ if (fechaSeleccionada < hoy || fechaSeleccionada > fechaMaxima) {
         mensajeError.classList.remove("d-none");
         Swal.fire({
             icon: "error",
@@ -89,19 +88,20 @@ formulario.addEventListener('submit', function (event) {
      mensajeError.classList.add("d-none");
 
 
-
-  //SPRINT 2 TAREA 5 - ESTADO INICIAL
-  const status = 'PORHACER';
-
  // Registrar la tarea
     taskManager.addTask(
-        nombre,
-        descripcion,
-        fecha,
-        status
+        data.nombre,
+        data.descripcion,
+        data.categoria,
+        data.fecha,
+        data.hora,
+        data.prioridad
     );
 
-    // Mostrar tareas en consola
+    taskManager.save();
+    render();
+
+    // prueba Mostrar tareas en consola
     console.log("Tareas registradas:", taskManager.tasks);
  
     // *Mensaje de éxito*
@@ -129,6 +129,65 @@ function configurarFecha() {
   fechaTarea.min = fechaHoy;
   fechaTarea.max = "2100-12-31";
 }
+
+
+
+//sprint 2 tarea 4 BOTON COMPLETAR TAREA - ELIMINAR TAREA (tarea 6)
+const botonesEstado = document.querySelectorAll(".btnEstado");
+
+listaTareas.addEventListener("click", function (event) {
+if(event.target.classList.contains("btnEstado")){
+ const tarjeta = event.target.closest(".task-card");
+        tarjeta.classList.toggle("tarea-completada");
+        if (tarjeta.classList.contains("tarea-completada")) {
+          event.target.textContent="Pendiente";
+        } else {
+           event.target.textContent="Completar";
+        }
+}
+
+if(event.target.classList.contains("delete-button")){
+        const parentTask=event.target.parentElement;
+        const taskId=Number(parentTask.dataset.taskId);
+        taskManager.deleteTask(taskId);
+        taskManager.save();
+        render();
+
+    }
+
+});
+
+
+function createTaskHtml(task){
+return`
+<div class="card task-card estado-pendiente" data-task-id="${task.id}>
+    <div class="card-body">
+    <h6 class="tituloTarea">${task.nombre}</h6>
+    <p>${task.descripcion}</p>
+    <p>${task.fecha} • ${task.hora}</p>
+    <span class="badge categoria categoria-${task.categoria.toLowerCase()}">
+        ${task.categoria}
+    </span>
+    <div class="mt-3 d-flex gap-2">
+    <button class="btn btn-outline-light btnEstado">Completar</button>
+    <button class="delete-button btn btn-danger">Eliminar</button>
+    </div>
+    </div>
+</div>
+
+`;
+
+}
+
+
+function render(){
+    listaTareas.innerHTML="";
+    for(let task of taskManager.tasks){
+        listaTareas.innerHTML+=createTaskHtml(task);
+    }
+}
+
+
 
 
 // //PRUEBA AGREGAR TAREA 

@@ -149,28 +149,8 @@
                             </select>
                         </div>
 
-                        <!-- Estado -->
-                        <label for="estadoTarea" class="form-label">
-                            Estado
-                        </label>
-
-                        <div class="input-group mb-4">
-                            <span class="input-group-text icon-box">
-                                <img src="img/status.png" alt="Estado" class="input-icon">
-                            </span>
-
-                            <select class="form-select" id="estadoTarea">
-
-                                <option value="" disabled selected>
-                                    Estado
-                                </option>
-
-                                <option>Por hacer</option>
-                                <option>En proceso</option>
-                                <option>Terminada</option>
-
-                            </select>
-                        </div>
+                      
+                      
 
                         <div id="mensajeError" class="alert alert-danger d-none" role="alert">
 
@@ -194,23 +174,31 @@
 
                 <!-- Barra de filtros -->
                 <div class="filter-bar mb-4">
-
-                    <button class="btn filtro active">Ver todo</button>
-                    <button class="btn filtro">Por hacer</button>
-                    <button class="btn filtro">En proceso</button>
-                    <button class="btn filtro">Terminadas</button>
+                    <button class="btn filtro active" data-status="TODAS">Ver todo</button>
+                    <button class="btn filtro" data-status="PORHACER">Por hacer</button>
+                    <button class="btn filtro" data-status="ENPROCESO">En proceso</button>
+                    <button class="btn filtro" data-status="COMPLETADA">Terminadas</button>
 
                 </div>
 
                 <!-- Columnas -->
                 <div class="row g-4">
 
+
+                    <!-- <div id="listaPorHacer"></div>
+
+                    <div id="listaProceso"></div>
+
+                    <div id="listaTerminadas"></div> -->
+
+
                     <!-- POR HACER -->
                     <div class="col-12 col-md-6 col-xl-4">
 
-                        <h5 class="estado-title pendiente">
-                            Por hacer
-                        </h5>
+                        <h5 class="estado-title pendiente">  Por hacer</h5>
+
+                    <!-- CONTENEDOR DE TAREAS TAREA 6 SPRINT 2-->
+                         <div id="listaTareas"></div>
 
                         <!-- CARDS DE TAREAS -->
                         <div class="task-card estado-pendiente">
