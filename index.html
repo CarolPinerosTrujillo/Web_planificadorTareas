@@ -8,7 +8,8 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DynaPuff:wght@400..700&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Titan+One&display=swap"
+    <link
+        href="https://fonts.googleapis.com/css2?family=DynaPuff:wght@400..700&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Titan+One&display=swap"
         rel="stylesheet">
 
     <link rel="stylesheet" href="./css/styles.css">
@@ -149,9 +150,6 @@
                             </select>
                         </div>
 
-                      
-                      
-
                         <div id="mensajeError" class="alert alert-danger d-none" role="alert">
 
                             Debes completar todos los campos.
@@ -182,239 +180,22 @@
                 </div>
 
                 <!-- Columnas -->
-                <div class="row g-4">
-
-
-                    <!-- <div id="listaPorHacer"></div>
-
-                    <div id="listaProceso"></div>
-
-                    <div id="listaTerminadas"></div> -->
-
-
-                    <!-- POR HACER -->
+                <div id="listaTareas" class="row g-4">
                     <div class="col-12 col-md-6 col-xl-4">
-
-                        <h5 class="estado-title pendiente">  Por hacer</h5>
-
-                    <!-- CONTENEDOR DE TAREAS TAREA 6 SPRINT 2-->
-                         <div id="listaTareas"></div>
-
-                        <!-- CARDS DE TAREAS -->
-                        <div class="task-card estado-pendiente">
-
-                            <h6 class="tituloTarea">Estudiar JavaScript</h6>
-                            <p>
-                                Hoy • 3:00 PM
-                            </p>
-                            <span class="badge categoria categoria-estudio">
-                                Estudio
-                            </span>
-
-                            <!-- cambio estado de tarea -->
-
-                            <button class="btn btn-outline-light btnEstado">
-                                Completar
-                            </button>
-
-                            <button class="delete-button btn btn-danger"> Eliminar </button>
-
-
-
-                        </div>
-
-                        <div class="task-card estado-pendiente">
-                            <h6>Leer documentación</h6>
-                            <p>
-                                Hoy • 3:00 PM
-                            </p>
-                            <span class="badge categoria categoria-estudio">
-                                Estudio
-                            </span>
-                              <!-- cambio estado de tarea -->
-                            <button class="btn btn-outline-light btnEstado">
-                                Completar
-                            </button>
-                        </div>
-
-                        <div class="task-card estado-pendiente">
-                            <h6>Ir al gym</h6>
-                            <p>
-                                Hoy • 3:00 PM
-                            </p>
-                            <span class="badge categoria categoria-ejercicio">
-                                Ejercicio
-                            </span>
-                            
-                              <!-- cambio estado de tarea -->
-                            <button class="btn btn-outline-light btnEstado">
-                                Completar
-                            </button>
-                        </div>
-
-                        <div class="task-card estado-pendiente">
-
-                            <h6>Comprar comida</h6>
-
-                            <p>
-                                Hoy • 3:00 PM
-                            </p>
-
-                            <span class="badge categoria categoria-compras">
-                                Compras
-                            </span>
-                              <!-- cambio estado de tarea -->
-                            <button class="btn btn-outline-light btnEstado">
-                                Completar
-                            </button>
-                        </div>
-
-                        <div class="task-card estado-pendiente">
-
-                            <h6>Organizar cuarto</h6>
-
-                            <p>
-                                Hoy • 3:00 PM
-                            </p>
-
-                            <span class="badge categoria categoria-casa">
-                                Casa
-                            </span>
-                              <!-- cambio estado de tarea -->
-                            <button class="btn btn-outline-light btnEstado">
-                                Completar
-                            </button>
-                        </div>
-
+                        <h5 class="estado-title pendiente">Por hacer</h5>
+                        <div id="listaPorHacer" class="lista-estado"></div>
                     </div>
 
-                    <!-- EN PROCESO -->
                     <div class="col-12 col-md-6 col-xl-4">
-
-                        <h5 class="estado-title proceso">
-                            En proceso
-                        </h5>
-
-                        <div class="task-card estado-proceso">
-                            <h6>Organizar cuarto</h6>
-                            <p>Hoy • 3:00 PM</p>
-                            <span class="badge categoria categoria-casa">Casa</span>
-                
-                              <!-- cambio estado de tarea -->
-                            <button class="btn btn-outline-light btnEstado">
-                                Completar
-                            </button>
-                        </div>
-
-                        <div class="task-card estado-proceso">
-                            <h6>Proyecto Bootcamp</h6>
-                            <p>Hoy • 3:00 PM</p>
-                            <span class="badge categoria categoria-trabajo">Trabajo</span>
-                            
-                              <!-- cambio estado de tarea -->
-                            <button class="btn btn-outline-light btnEstado">
-                                Completar
-                            </button>
-                        </div>
-
-                        <div class="task-card estado-proceso">
-                            <h6>Practicar inglés</h6>
-                            <p>Hoy • 3:00 PM</p>
-                            <span class="badge categoria categoria-estudio">Estudio</span>
-                            
-                              <!-- cambio estado de tarea -->
-                            <button class="btn btn-outline-light btnEstado">
-                                Completar
-                            </button>
-                        </div>
-
-                        <div class="task-card estado-proceso">
-                            <h6>Diseñar App</h6>
-                            <p>Hoy • 3:00 PM</p>
-                            <span class="badge categoria categoria-estudio">Estudio</span>
-                            
-                              <!-- cambio estado de tarea -->
-                            <button class="btn btn-outline-light btnEstado">
-                                Completar
-                            </button>
-                        </div>
-
-                        <div class="task-card estado-proceso">
-                            <h6>Enviar hojas de vida</h6>
-                            <p>Hoy • 3:00 PM</p>
-                            <span class="badge categoria categoria-trabajo">Trabajo</span>
-                            
-                              <!-- cambio estado de tarea -->
-                            <button class="btn btn-outline-light btnEstado">
-                                Completar
-                            </button>
-                        </div>
-
+                        <h5 class="estado-title proceso">En proceso</h5>
+                        <div id="listaProceso" class="lista-estado"></div>
                     </div>
 
-                    <!-- TERMINADAS -->
                     <div class="col-12 col-md-6 col-xl-4">
-
-                        <h5 class="estado-title terminado">
-                            Terminadas
-                        </h5>
-
-                        <div class="task-card estado-terminado">
-                            <h6>Desayunar</h6>
-                            <p>Hoy • 8:00 AM</p>
-                            <span class="badge categoria categoria-personal">Personal</span>
-                            
-                              <!-- cambio estado de tarea -->
-                            <button class="btn btn-outline-light btnEstado">
-                                Completar
-                            </button>
-                        </div>
-
-                        <div class="task-card estado-terminado">
-                            <h6>Tender cama</h6>
-                            <p>Hoy • 8:20 AM</p>
-                            <span class="badge categoria categoria-casa">Casa</span>
-                            
-                              <!-- cambio estado de tarea -->
-                            <button class="btn btn-outline-light btnEstado">
-                                Completar
-                            </button>
-                        </div>
-
-                        <div class="task-card estado-terminado">
-                            <h6>Responder correos</h6>
-                            <p>Hoy • 9:00 AM</p>
-                            <span class="badge categoria categoria-trabajo">Trabajo</span>
-                            
-                              <!-- cambio estado de tarea -->
-                            <button class="btn btn-outline-light btnEstado">
-                                Completar
-                            </button>
-                        </div>
-
-                        <div class="task-card estado-terminado">
-                            <h6>Pagar servicios</h6>
-                            <p>Hoy • 11:00 AM</p>
-                            <span class="badge categoria categoria-finanzas">Finanzas</span>
-                            
-                              <!-- cambio estado de tarea -->
-                            <button class="btn btn-outline-light btnEstado">
-                                Completar
-                            </button>
-                        </div>
-
-                        <div class="task-card estado-terminado">
-                            <h6>Llamar cliente</h6>
-                            <p>Hoy • 12:00 PM</p>
-                            <span class="badge categoria categoria-trabajo">Trabajo</span>
-                            
-                              <!-- cambio estado de tarea -->
-                            <button class="btn btn-outline-light btnEstado">
-                                Completar
-                            </button>
-                        </div>
-
+                        <h5 class="estado-title terminado">Terminadas</h5>
+                        <div id="listaTerminadas" class="lista-estado"></div>
                     </div>
+
 
                 </div>
 

@@ -1,5 +1,5 @@
 class TaskManager {
-    constructor(currentId=0) {
+    constructor(currentId = 0) {
         this.tasks = [];
         this.currentId = currentId;
     }
@@ -16,32 +16,50 @@ class TaskManager {
             hora: hora,
             prioridad: prioridad,
             categoria: categoria,
-            estado: 'PORHACER'
+            status: 'PORHACER'
         });
     }
 
+    getTaskById(taskId) {
+        let foundTask;
+        for (let task of this.tasks) {
+            if (task.id === taskId) {
+                foundTask = task;
+                break;
+            }
+        }
+        return foundTask;
+    }
 
+    //SOLUCION V2
+    deleteTask(taskId) {
+        this.tasks = this.tasks.filter(task => task.id !== taskId);
+    }
+
+    //SOLUCION V1
     deleteTask(taskId) {
         const newTasks = [];
         for (let task of this.tasks) {
             if (task.id !== taskId) {
-                    newTasks.push(task);
-                }
+                newTasks.push(task);
+            }
         }
-            this.tasks = newTasks;
+        this.tasks = newTasks;
     }
 
-    save(){
+    save() {
         localStorage.setItem("tasks", JSON.stringify(this.tasks));
     }
 
-    load() {    
+    load() {
         const tareas = JSON.parse(localStorage.getItem("tasks"));
         if (tareas) {
-            this.tasks = tareas;
-            this.currentId = tareas[tareas.length - 1]?.id || 0;
+            this.tasks = tareas.map(task => ({...task,status: task.status || task.estado || "PORHACER" }));
+            this.tasks.forEach(task => { if (task.status === "DONE") task.status = "COMPLETADA"; });
+            this.currentId = this.tasks.reduce((max, task) => Math.max(max, task.id), 0);
         }
     }
+
 
 }
 
