@@ -1,6 +1,5 @@
 const formulario = document.querySelector("#formularioTareas");
 
-
 // ELEMENTOS
 const nombreTarea = document.querySelector('#nombreTarea');
 const descripcionTarea = document.querySelector('#descripcionTarea');
@@ -9,30 +8,19 @@ const fechaTarea = document.querySelector('#fechaTarea');
 const horaTarea = document.querySelector('#horaTarea');
 const prioridadTarea = document.querySelector('#prioridadTarea');
 const mensajeError = document.querySelector("#mensajeError");
-//const btn = document.querySelector("#btnAgregarTarea");
 
-//ubicacion de las tareas 
 const listaTareas = document.querySelector("#listaTareas");
-
-//LISTADOS SECCIONADOS TIPOS DE TAREAS
-const listaPorHacer = document.querySelector("#listaPorHacer");
-const listaProceso = document.querySelector("#listaProceso");
-const listaTerminadas = document.querySelector("#listaTerminadas");
 const botonesFiltro = document.querySelectorAll(".filtro");
 
-//SPRINT 2 TAREA 4-5
 const taskManager = new TaskManager();
 taskManager.load();
 
 let filtroActual = "TODAS";
 
-// Configura el input fecha
 configurarFecha();
-render();
+taskManager.render();
 
-// Implementación de la validación
 function validFormFieldInput(data) {
-
     const nombre = data.nombre.trim();
     const descripcion = data.descripcion.trim();
     const categoria = data.categoria.trim();
@@ -44,7 +32,6 @@ function validFormFieldInput(data) {
     return true;
 }
 
-// CLICK FORMULARIO 
 formulario.addEventListener('submit', function (event) {
     event.preventDefault();
 
@@ -64,11 +51,8 @@ formulario.addEventListener('submit', function (event) {
         prioridad,
     };
 
-    console.log("Datos del formulario:", data);
-
     if (!validFormFieldInput(data)) {
         mensajeError.classList.remove("d-none");
-
         Swal.fire({
             icon: 'error',
             title: 'Datos inválidos',
@@ -77,12 +61,14 @@ formulario.addEventListener('submit', function (event) {
         return;
     }
 
-    //VALIDACION DE FECHA 
     const fechaSeleccionada = data.fecha;
-    const hoy = new Date().toISOString().split("T")[0];
+    const hoy = new Date();
+    const anio = hoy.getFullYear();
+    const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+    const dia = String(hoy.getDate()).padStart(2, '0');
     const fechaMaxima = "2100-12-31";
 
-    if (fechaSeleccionada < hoy || fechaSeleccionada > fechaMaxima) {
+    if (fechaSeleccionada < `${anio}-${mes}-${dia}` || fechaSeleccionada > fechaMaxima) {
         mensajeError.classList.remove("d-none");
         Swal.fire({
             icon: "error",
@@ -92,11 +78,8 @@ formulario.addEventListener('submit', function (event) {
         return;
     }
 
-    // *Si todo está correcto, ocultar mensaje de error*
     mensajeError.classList.add("d-none");
 
-
-    // Registrar la tarea
     taskManager.addTask(
         data.nombre,
         data.descripcion,
@@ -107,42 +90,29 @@ formulario.addEventListener('submit', function (event) {
     );
 
     taskManager.save();
-    render();
+    taskManager.render();
 
-    // prueba Mostrar tareas en consola
-    console.log("Tareas registradas:", taskManager.tasks);
-
-    // *Mensaje de éxito*
     Swal.fire({
         icon: "success",
         title: "Tarea agregada con éxito",
         text: "La tarea fue registrada correctamente."
-
     }).then(() => {
-        // Limpiar formulario
         formulario.reset();
-        // Volver a configurar fecha mínima
         configurarFecha();
-
     });
-
 });
 
-
-
 function configurarFecha() {
-
     const hoy = new Date();
-    const fechaHoy = hoy.toISOString().split("T")[0];
+    const anio = hoy.getFullYear();
+    const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+    const dia = String(hoy.getDate()).padStart(2, '0');
+    const fechaHoy = `${anio}-${mes}-${dia}`;
     fechaTarea.min = fechaHoy;
     fechaTarea.max = "2100-12-31";
 }
 
-
-
-//sprint 2 tarea 4 BOTON COMPLETAR TAREA - ELIMINAR TAREA (tarea 6)
 listaTareas.addEventListener("click", function (event) {
-
     const botonEstado = event.target.closest(".done-button");
     const botonEliminar = event.target.closest(".delete-button");
 
@@ -162,7 +132,7 @@ listaTareas.addEventListener("click", function (event) {
         }
 
         taskManager.save();
-        render();
+        taskManager.render();
     }
 
     if (botonEliminar) {
@@ -171,7 +141,7 @@ listaTareas.addEventListener("click", function (event) {
 
         taskManager.deleteTask(taskId);
         taskManager.save();
-        render();
+        taskManager.render();
 
         Swal.fire({
             icon: "success",
@@ -185,136 +155,21 @@ listaTareas.addEventListener("click", function (event) {
 
 botonesFiltro.forEach(function (boton) {
     boton.addEventListener("click", function () {
-
         botonesFiltro.forEach(btn => btn.classList.remove("active"));
         boton.classList.add("active");
-
         filtroActual = boton.dataset.status;
-
-        render();
+        taskManager.render(filtroActual);
     });
 });
 
+function actualizarReloj() {
+    const ahora = new Date();
+    const opcionesFecha = { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' };
+    const opcionesHora = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
 
-function createTaskHtml(task){
-
-const estadoConfig={
-PORHACER:{
-texto:"Por hacer",
-boton:"Iniciar",
-clase:"estado-pendiente",
-icono:"○"
-},
-ENPROCESO:{
-texto:"En proceso",
-boton:"Completar",
-clase:"estado-proceso",
-icono:"◐"
-},
-COMPLETADA:{
-texto:"Completada",
-boton:"Reabrir",
-clase:"estado-terminado",
-icono:"✓"
-}
-};
-
-const estado=estadoConfig[task.status]||estadoConfig.PORHACER;
-const categoriaClass=task.categoria.toLowerCase();
-
-return `
-<div class="task-card ${estado.clase}" data-task-id="${task.id}">
-
-    <div class="task-card__header">
-
-        <div class="task-card__title-wrapper">
-            <span class="task-status-icon">${estado.icono}</span>
-
-            <h6 class="tituloTarea">${task.nombre}</h6>
-        </div>
-
-        <span class="estado-badge">${estado.texto}</span>
-
-    </div>
-
-    <p class="task-description">${task.descripcion}</p>
-
-    <div class="task-info">
-        <span>📅 ${task.fecha}</span>
-        <span>🕐 ${task.hora}</span>
-    </div>
-
-    <div class="task-card__footer">
-
-        <span class="badge categoria categoria-${categoriaClass}">
-            ${task.categoria}
-        </span>
-
-        <span class="prioridad prioridad-${task.prioridad.toLowerCase()}">
-            ${task.prioridad}
-        </span>
-
-    </div>
-
-    <div class="task-actions">
-
-        <button class="done-button btnEstado">
-            ${estado.boton}
-        </button>
-
-        <button class="delete-button">
-            Eliminar
-        </button>
-
-    </div>
-
-</div>
-`;
+    document.getElementById('fechaActual').textContent = ahora.toLocaleDateString('es-CO', opcionesFecha);
+    document.getElementById('horaActual').textContent = ahora.toLocaleTimeString('es-CO', opcionesHora);
 }
 
-
-function render() {
-    listaPorHacer.innerHTML = "";
-    listaProceso.innerHTML = "";
-    listaTerminadas.innerHTML = "";
-
-    const tareasFiltradas = taskManager.tasks.filter(function (task) {
-
-        if (filtroActual === "TODAS") {
-            return true;
-        }
-
-        return task.status === filtroActual;
-    });
-
-    for (let task of tareasFiltradas) {
-       
-        const html = createTaskHtml(task);
-
-        if (task.status === "PORHACER") {
-            listaPorHacer.innerHTML += html;
-        }
-
-        if (task.status === "ENPROCESO") {
-            listaProceso.innerHTML += html;
-        }
-
-        if (task.status === "COMPLETADA") {
-            listaTerminadas.innerHTML += html;
-        }
-
-    }
-}
-
-
-
-
-// //PRUEBA AGREGAR TAREA
-// taskManager.addTask(
-//   'Sacar la basura',
-//   'Sacar la basura al frente de la casa',
-//   '2020-09-20',
-//   'PORHACER'
-// );
-
-// console.log(taskManager.tasks);
+actualizarReloj();
+setInterval(actualizarReloj, 1000);

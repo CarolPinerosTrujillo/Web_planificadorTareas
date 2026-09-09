@@ -20,8 +20,12 @@
 
     <!-- NAVBAR -->
     <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
-        <div class="container">
-            <a class="navbar-brand " href="#">Planifica tus tareas</a>
+        <div class="container d-flex justify-content-between align-items-center">
+            <a class="navbar-brand" href="#">Planifica tus tareas</a>
+            <div class="navbar-reloj">
+                <span id="fechaActual"></span>
+                <span id="horaActual"></span>
+            </div>
         </div>
     </nav>
 
@@ -200,10 +204,20 @@
                 </div>
 
             </div>
-            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-            <script src="./JS/taskManager.js"></script>
-            <script src="./JS/index.js"></script>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer-main">
+        <div class="container text-center">
+            <p class="footer-texto">Carol PlannerApp &copy; 2026</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="./JS/taskManager.js"></script>
+    <script src="./JS/index.js"></script>
 
 </body>
 
