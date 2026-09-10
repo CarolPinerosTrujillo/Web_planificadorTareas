@@ -267,12 +267,12 @@ margin-bottom:12px;
 
 /* TITULOS */
 .estado-pendiente {
-    background: linear-gradient(135deg, #db8945, #bbc43c);
+    background: linear-gradient(135deg, #c07ee6, #7c0794);
 }
 
 .estado-pendiente .estado-badge{
 background:#fff3e8;
-color:#d85d00;
+color:#2b0233;
 }
 
 .task-status-icon{
@@ -281,7 +281,7 @@ background:#fff3e8;
 }
 
 .estado-pendiente::before{
-background:#f97316;
+background:#620974;
 }
 
 
@@ -301,7 +301,7 @@ background:#f0ecff;
 }
 
 .estado-proceso::before{
-background:#6d4cff;
+background:#2a0daa;
 }
 
 
@@ -320,7 +320,7 @@ background:#e8faf5;
 }
 
 .estado-terminado::before{
-background:#06b88b;
+background:#025742;
 }
 
 .estado-badge{
@@ -489,7 +489,7 @@ transition:.2s ease;
 }
 
 .btnEstado{
-background:#4b7745;
+background:#27a35f;
 color:#fff;
 flex:1;
 }
@@ -525,7 +525,7 @@ padding:8px;
 font-size:0;
 cursor:pointer;
 transition:.2s ease;
-background:#3b82f6;
+background:#995aeb;
 color:#fff;
 display:flex;
 align-items:center;
@@ -533,7 +533,7 @@ justify-content:center;
 }
 
 .edit-button:hover{
-background:#2563eb;
+background:#5c8bf0;
 transform:translateY(-2px);
 }
 
@@ -593,7 +593,7 @@ font-size:.7rem;
 font-weight:500;
 padding:3px 8px;
 border-radius:20px;
-background:rgba(249,115,22,.09);
+background:rgba(189, 24, 211, 0.09);
 color:#d85d00;
 }
 
