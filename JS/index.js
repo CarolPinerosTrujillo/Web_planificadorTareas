@@ -20,6 +20,7 @@ let taskEditandoId = null;
 
 configurarFecha();
 taskManager.render();
+cargarTareasEjemplo();
 
 function validFormFieldInput(data) {
     const nombre = data.nombre.trim();
@@ -231,3 +232,15 @@ function actualizarReloj() {
 
 actualizarReloj();
 setInterval(actualizarReloj, 1000);
+
+function cargarTareasEjemplo() {
+    if (taskManager.tasks.length > 0) return;
+
+    taskManager.addTask('Comprar víveres', 'Leche, huevos, pan', 'Compras', '2026-09-10', '10:00', 'Alta');
+    taskManager.addTask('Estudiar JavaScript', 'Repasar arrays y objetos', 'Estudio', '2026-09-11', '14:00', 'Media');
+    taskManager.addTask('Pagar servicios', 'Agua, luz, internet', 'Finanzas', '2026-09-12', '09:00', 'Alta');
+    taskManager.addTask('Ir al dentista', 'Control de rutina', 'Personal', '2026-09-05', '10:00', 'Media');
+
+    taskManager.save();
+    taskManager.render();
+}

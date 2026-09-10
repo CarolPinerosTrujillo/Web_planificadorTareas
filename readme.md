@@ -2,7 +2,7 @@
   <img src="./img/planificador.png" alt="PlannerApp" width="180">
 </p>
 
-# 📅 Web Planner para Tareas Carol PlannerApp 📅
+# PlannerApp
 
 Una aplicación web enfocada en la organización y planificación de tareas diarias. Este proyecto busca ofrecer una interfaz intuitiva y visualmente atractiva para registrar, clasificar y gestionar actividades de manera sencilla.
 
@@ -28,6 +28,11 @@ Actualmente el proyecto se encuentra en desarrollo y se está construyendo sigui
   - Por hacer
   - En proceso
   - Terminadas
+- ✅ Agregar, editar y eliminar tareas.
+- ✅ Filtrar tareas por estado.
+- ✅ Persistencia de datos con LocalStorage.
+- ✅ Reloj en tiempo real.
+- ✅ 4 tareas de ejemplo precargadas.
 
 ---
 
@@ -38,8 +43,20 @@ Actualmente el proyecto se encuentra en desarrollo y se está construyendo sigui
 - Bootstrap 5
 - JavaScript (Vanilla JS)
 - SweetAlert2
-- Figma (Diseño UI/UX)
 - Git & GitHub
+
+---
+
+## 🧪 Pruebas unitarias
+
+El archivo `JS/tests.js` contiene pruebas que validan:
+
+- Métodos de la clase TaskManager (addTask, deleteTask, editTask, getTaskById).
+- Persistencia con LocalStorage (save/load).
+- Cambio de estado de tareas.
+- Renderizado en el DOM.
+
+Las pruebas se ejecutan con el botón "Ejecutar pruebas" en el formulario.
 
 ---
 
@@ -74,28 +91,19 @@ Puedes visualizar la versión actual del proyecto aquí:
 ## 📂 Estructura del proyecto
 
 ```text
-📦 Web_planificadorTareas
-│
-├── 📁 img
-├── 📄 index.html
-├── 📄 styles.css
-├── 📄 app.js
-└── 📄 README.md
+Web_planificadorTareas/
+├── index.html
+├── css/
+│   └── styles.css
+├── JS/
+│   ├── taskManager.js
+│   ├── index.js
+│   └── tests.js
+├── img/
+│   └── (iconos e imágenes)
+├── .gitignore
+└── README.md
 ```
-
----
-
-## 📌 Próximas funcionalidades
-
-- Agregar tareas dinámicamente mediante JavaScript.
-- Editar tareas existentes.
-- Eliminar tareas.
-- Filtrar tareas por estado.
-- Filtrar tareas por categoría.
-- Persistencia de datos utilizando LocalStorage.
-- Mejorar la experiencia responsive.
-- Optimizar la interfaz y animaciones.
-- Refactorización del código.
 
 ---
 
@@ -119,3 +127,4 @@ Este proyecto hace parte de mi proceso de aprendizaje en desarrollo Frontend y t
 Developer en formación, enfocada en crear aplicaciones web funcionales, modernas y con una buena experiencia de usuario.
 
 ---
+
