@@ -16,6 +16,7 @@ const taskManager = new TaskManager();
 taskManager.load();
 
 let filtroActual = "TODAS";
+let taskEditandoId = null;
 
 configurarFecha();
 taskManager.render();
@@ -80,26 +81,44 @@ formulario.addEventListener('submit', function (event) {
 
     mensajeError.classList.add("d-none");
 
-    taskManager.addTask(
-        data.nombre,
-        data.descripcion,
-        data.categoria,
-        data.fecha,
-        data.hora,
-        data.prioridad
-    );
+    if (taskEditandoId) {
+        taskManager.editTask(taskEditandoId, data);
+        taskEditandoId = null;
+        document.querySelector('#btnAgregarTarea').textContent = 'Agregar tarea';
 
-    taskManager.save();
-    taskManager.render();
+        taskManager.save();
+        taskManager.render(filtroActual);
 
-    Swal.fire({
-        icon: "success",
-        title: "Tarea agregada con éxito",
-        text: "La tarea fue registrada correctamente."
-    }).then(() => {
-        formulario.reset();
-        configurarFecha();
-    });
+        Swal.fire({
+            icon: "success",
+            title: "Tarea actualizada",
+            text: "La tarea fue actualizada correctamente."
+        }).then(() => {
+            formulario.reset();
+            configurarFecha();
+        });
+    } else {
+        taskManager.addTask(
+            data.nombre,
+            data.descripcion,
+            data.categoria,
+            data.fecha,
+            data.hora,
+            data.prioridad
+        );
+
+        taskManager.save();
+        taskManager.render();
+
+        Swal.fire({
+            icon: "success",
+            title: "Tarea agregada con éxito",
+            text: "La tarea fue registrada correctamente."
+        }).then(() => {
+            formulario.reset();
+            configurarFecha();
+        });
+    }
 });
 
 function configurarFecha() {
@@ -114,6 +133,7 @@ function configurarFecha() {
 
 listaTareas.addEventListener("click", function (event) {
     const botonEstado = event.target.closest(".done-button");
+    const botonEditar = event.target.closest(".edit-button");
     const botonEliminar = event.target.closest(".delete-button");
 
     if (botonEstado) {
@@ -135,20 +155,51 @@ listaTareas.addEventListener("click", function (event) {
         taskManager.render();
     }
 
+    if (botonEditar) {
+        const tarjeta = botonEditar.closest(".task-card");
+        const taskId = Number(tarjeta.dataset.taskId);
+        const task = taskManager.getTaskById(taskId);
+
+        if (!task) return;
+
+        nombreTarea.value = task.nombre;
+        descripcionTarea.value = task.descripcion;
+        categoriaTarea.value = task.categoria;
+        fechaTarea.value = task.fecha;
+        horaTarea.value = task.hora;
+        prioridadTarea.value = task.prioridad;
+
+        taskEditandoId = taskId;
+        document.querySelector('#btnAgregarTarea').textContent = 'Actualizar tarea';
+        formulario.scrollIntoView({ behavior: 'smooth' });
+    }
+
     if (botonEliminar) {
         const tarjeta = botonEliminar.closest(".task-card");
         const taskId = Number(tarjeta.dataset.taskId);
 
-        taskManager.deleteTask(taskId);
-        taskManager.save();
-        taskManager.render();
-
         Swal.fire({
-            icon: "success",
-            title: "Tarea eliminada",
-            text: "La tarea fue eliminada.",
-            timer: 1500,
-            showConfirmButton: false
+            title: '¿Eliminar tarea?',
+            text: 'Esta acción no se puede deshacer',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                taskManager.deleteTask(taskId);
+                taskManager.save();
+                taskManager.render();
+                Swal.fire({
+                    icon: "success",
+                    title: "Tarea eliminada",
+                    text: "La tarea fue eliminada.",
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            }
         });
     }
 });
@@ -161,6 +212,13 @@ botonesFiltro.forEach(function (boton) {
         taskManager.render(filtroActual);
     });
 });
+
+function cancelarEdicion() {
+    taskEditandoId = null;
+    document.querySelector('#btnAgregarTarea').textContent = 'Agregar tarea';
+    formulario.reset();
+    configurarFecha();
+}
 
 function actualizarReloj() {
     const ahora = new Date();

@@ -33,6 +33,18 @@ class TaskManager {
         this.tasks = this.tasks.filter(task => task.id !== taskId);
     }
 
+    editTask(taskId, nuevosDatos) {
+        const task = this.getTaskById(taskId);
+        if (task) {
+            task.nombre = nuevosDatos.nombre;
+            task.descripcion = nuevosDatos.descripcion;
+            task.categoria = nuevosDatos.categoria;
+            task.fecha = nuevosDatos.fecha;
+            task.hora = nuevosDatos.hora;
+            task.prioridad = nuevosDatos.prioridad;
+        }
+    }
+
     save() {
         const tasksJson = JSON.stringify(this.tasks);
         localStorage.setItem('tasks', tasksJson);
@@ -102,8 +114,11 @@ class TaskManager {
                 <button class="done-button btnEstado">
                     ${estado.boton}
                 </button>
+                <button class="edit-button">
+                    <img src="img/editar.png" alt="Editar" class="btn-icon">
+                </button>
                 <button class="delete-button">
-                    Eliminar
+                    <img src="img/borrar.png" alt="Eliminar" class="btn-icon">
                 </button>
             </div>
         </div>
