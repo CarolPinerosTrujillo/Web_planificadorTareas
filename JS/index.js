@@ -11,15 +11,21 @@ const mensajeError = document.querySelector("#mensajeError");
 
 const listaTareas = document.querySelector("#listaTareas");
 const botonesFiltro = document.querySelectorAll(".filtro");
+const btnCancelarEdicion = document.querySelector('#btnCancelarEdicion');
+const formCard = document.querySelector('.form-card');
+const filtroCategoriaSelect = document.querySelector('#filtroCategoria');
 
 const taskManager = new TaskManager();
 taskManager.load();
 
 let filtroActual = "TODAS";
+let categoriaActual = "TODAS";
 let taskEditandoId = null;
 
 configurarFecha();
-taskManager.render();
+taskManager.render(filtroActual, categoriaActual);
+actualizarProgreso();
+actualizarContadoresFiltro();
 cargarTareasEjemplo();
 
 function validFormFieldInput(data) {
@@ -86,9 +92,13 @@ formulario.addEventListener('submit', function (event) {
         taskManager.editTask(taskEditandoId, data);
         taskEditandoId = null;
         document.querySelector('#btnAgregarTarea').textContent = 'Agregar tarea';
+        btnCancelarEdicion.classList.add('d-none');
+        formCard.classList.remove('form-editing');
 
         taskManager.save();
-        taskManager.render(filtroActual);
+        taskManager.render(filtroActual, categoriaActual);
+        actualizarProgreso();
+        actualizarContadoresFiltro();
 
         Swal.fire({
             icon: "success",
@@ -109,7 +119,9 @@ formulario.addEventListener('submit', function (event) {
         );
 
         taskManager.save();
-        taskManager.render();
+        taskManager.render(filtroActual, categoriaActual);
+        actualizarProgreso();
+        actualizarContadoresFiltro();
 
         Swal.fire({
             icon: "success",
@@ -153,7 +165,9 @@ listaTareas.addEventListener("click", function (event) {
         }
 
         taskManager.save();
-        taskManager.render();
+        taskManager.render(filtroActual, categoriaActual);
+        actualizarProgreso();
+        actualizarContadoresFiltro();
     }
 
     if (botonEditar) {
@@ -172,6 +186,8 @@ listaTareas.addEventListener("click", function (event) {
 
         taskEditandoId = taskId;
         document.querySelector('#btnAgregarTarea').textContent = 'Actualizar tarea';
+        btnCancelarEdicion.classList.remove('d-none');
+        formCard.classList.add('form-editing');
         formulario.scrollIntoView({ behavior: 'smooth' });
     }
 
@@ -192,7 +208,9 @@ listaTareas.addEventListener("click", function (event) {
             if (result.isConfirmed) {
                 taskManager.deleteTask(taskId);
                 taskManager.save();
-                taskManager.render();
+                taskManager.render(filtroActual, categoriaActual);
+                actualizarProgreso();
+                actualizarContadoresFiltro();
                 Swal.fire({
                     icon: "success",
                     title: "Tarea eliminada",
@@ -210,15 +228,51 @@ botonesFiltro.forEach(function (boton) {
         botonesFiltro.forEach(btn => btn.classList.remove("active"));
         boton.classList.add("active");
         filtroActual = boton.dataset.status;
-        taskManager.render(filtroActual);
+        taskManager.render(filtroActual, categoriaActual);
+        actualizarProgreso();
+        actualizarContadoresFiltro();
     });
+});
+
+filtroCategoriaSelect.addEventListener('change', function () {
+    categoriaActual = this.value;
+    taskManager.render(filtroActual, categoriaActual);
+    actualizarProgreso();
+    actualizarContadoresFiltro();
 });
 
 function cancelarEdicion() {
     taskEditandoId = null;
     document.querySelector('#btnAgregarTarea').textContent = 'Agregar tarea';
+    btnCancelarEdicion.classList.add('d-none');
+    formCard.classList.remove('form-editing');
     formulario.reset();
     configurarFecha();
+}
+
+btnCancelarEdicion.addEventListener('click', cancelarEdicion);
+
+function actualizarProgreso() {
+    const stats = taskManager.getStats();
+    const porcentaje = stats.total === 0 ? 0 : Math.round((stats.completadas / stats.total) * 100);
+    document.querySelector('#progressText').textContent = `${stats.completadas} de ${stats.total} completadas`;
+    document.querySelector('#progressPercent').textContent = `${porcentaje}%`;
+    document.querySelector('#progressFill').style.width = `${porcentaje}%`;
+}
+
+function actualizarContadoresFiltro() {
+    const stats = taskManager.getStats();
+    const conteos = {
+        'TODAS': stats.total,
+        'PORHACER': stats.porHacer,
+        'ENPROCESO': stats.enProceso,
+        'COMPLETADA': stats.completadas
+    };
+    botonesFiltro.forEach(boton => {
+        const status = boton.dataset.status;
+        const label = boton.dataset.label;
+        boton.innerHTML = `${label} <span class="filtro-count">(${conteos[status]})</span>`;
+    });
 }
 
 function actualizarReloj() {
@@ -242,5 +296,7 @@ function cargarTareasEjemplo() {
     taskManager.addTask('Ir al dentista', 'Control de rutina', 'Personal', '2026-09-05', '10:00', 'Media');
 
     taskManager.save();
-    taskManager.render();
+    taskManager.render(filtroActual, categoriaActual);
+    actualizarProgreso();
+    actualizarContadoresFiltro();
 }

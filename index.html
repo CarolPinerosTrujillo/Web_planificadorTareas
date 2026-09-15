@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PlannerApp</title>
-    <link rel="icon" type="image/png" href="./img/planificador.png">
+      <link rel="icon" type="image/png" href="./assets/img/logo_deg_sombra.png">
+    <link rel="icon" type="image/png" href="./img/favicon.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,7 +24,7 @@
     <!-- NAVBAR -->
     <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
         <div class="container d-flex justify-content-between align-items-center">
-            <a class="navbar-brand" href="#">Planifica tus tareas</a>
+            <a class="navbar-brand" href="#"> </a>
             <div class="navbar-reloj">
                 <span id="fechaActual"></span>
                 <span id="horaActual"></span>
@@ -34,13 +35,13 @@
     <!-- HEADER -->
     <header class="header-main">
         <div class="container d-flex justify-content-between align-items-center">
-            <h1 class="titulo-app">PlannerApp</h1>
-            <img src="img/planificador.png" class="logo-header">
+            <h1 class="titulo-app"><img src="./img/logo-titulo.png" height="80" alt="PlannerApp"></h1>
+            <img src="img/favicon.png" class="logo-header logo-header--desktop" alt="Logo PlannerApp">
         </div>
     </header>
 
     <!-- CONTENIDO -->
-    <div class="container mt-4">
+    <div class="container mt-3">
         <div class="row">
 
             <!-- FORMULARIO -->
@@ -51,7 +52,9 @@
 
                         <h3 class="mb-4 titulo-formulario">
                             Planea tu día
+                            <img src="./img/calendar.png" alt="" height="40" class="ms-2">
                         </h3>
+                        
 
                         <!-- Nombre -->
                         <label for="nombreTarea" class="form-label">
@@ -168,6 +171,10 @@
 
                         </button>
 
+                        <button type="button" class="btn btn-cancelar d-none w-100" id="btnCancelarEdicion">
+                            Cancelar edición
+                        </button>
+
                         <button type="button" class="btn btn-sm btn-outline-secondary mt-2 w-100 d-none" onclick="ejecutarPruebas()">
                             Ejecutar pruebas
                         </button>
@@ -182,11 +189,35 @@
 
                 <!-- Barra de filtros -->
                 <div class="filter-bar mb-4">
-                    <button class="btn filtro active" data-status="TODAS">Ver todo</button>
-                    <button class="btn filtro" data-status="PORHACER">Por hacer</button>
-                    <button class="btn filtro" data-status="ENPROCESO">En proceso</button>
-                    <button class="btn filtro" data-status="COMPLETADA">Terminadas</button>
+                    <button class="btn filtro active" data-status="TODAS" data-label="Ver todo">Ver todo</button>
+                    <button class="btn filtro" data-status="PORHACER" data-label="Por hacer">Por hacer</button>
+                    <button class="btn filtro" data-status="ENPROCESO" data-label="En proceso">En proceso</button>
+                    <button class="btn filtro" data-status="COMPLETADA" data-label="Terminadas">Terminadas</button>
+                    <div class="filter-divider"></div>
+                    <div class="cat-filter-inline">
+                        <span class="cat-filter-icon">🔍</span>
+                        <select class="cat-filter" id="filtroCategoria">
+                            <option value="TODAS">Todas</option>
+                            <option value="Casa">🏠 Casa</option>
+                            <option value="Trabajo">💼 Trabajo</option>
+                            <option value="Estudio">📚 Estudio</option>
+                            <option value="Personal">👤 Personal</option>
+                            <option value="Compras">🛒 Compras</option>
+                            <option value="Finanzas">💰 Finanzas</option>
+                            <option value="Ejercicio">🏃 Ejercicio</option>
+                        </select>
+                    </div>
+                </div>
 
+                <!-- Barra de progreso -->
+                <div class="progress-section mb-4">
+                    <div class="progress-text">
+                        <span id="progressText">0 de 0 completadas</span>
+                        <span id="progressPercent">0%</span>
+                    </div>
+                    <div class="progress-bar-custom">
+                        <div class="progress-bar-fill" id="progressFill" style="width: 0%"></div>
+                    </div>
                 </div>
 
                 <!-- Columnas -->
@@ -216,7 +247,9 @@
     <!-- FOOTER -->
     <footer class="footer-main">
         <div class="container text-center">
-            <p class="footer-texto">PlannerApp &copy; 2026</p>
+            <img src="img/logo-nav.png" alt="PlannerApp" class="footer-logo">
+            <p class="footer-texto">&copy; 2026 Planner App CP</p>
+            <p class="footer-autora">Carol Piñeros</p>
         </div>
     </footer>
 

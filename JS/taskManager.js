@@ -63,6 +63,14 @@ class TaskManager {
         }
     }
 
+    getStats() {
+        const total = this.tasks.length;
+        const completadas = this.tasks.filter(t => t.status === 'COMPLETADA').length;
+        const porHacer = this.tasks.filter(t => t.status === 'PORHACER').length;
+        const enProceso = this.tasks.filter(t => t.status === 'ENPROCESO').length;
+        return { total, completadas, porHacer, enProceso };
+    }
+
     createTaskHtml(task) {
         const estadoConfig = {
             PORHACER: {
@@ -87,17 +95,18 @@ class TaskManager {
 
         const estado = estadoConfig[task.status] || estadoConfig.PORHACER;
         const categoriaClass = task.categoria.toLowerCase();
+        const descEscapada = task.descripcion.replace(/"/g, '&quot;');
 
         return `
-        <div class="task-card ${estado.clase}" data-task-id="${task.id}">
+        <div class="task-card ${estado.clase} task-card--entering" data-task-id="${task.id}">
             <div class="task-card__header">
                 <div class="task-card__title-wrapper">
                     <span class="task-status-icon">${estado.icono}</span>
-                    <h6 class="tituloTarea">${task.nombre}</h6>
+                    <h6 class="tituloTarea" title="${descEscapada}">${task.nombre}</h6>
                 </div>
                 <span class="estado-badge">${estado.texto}</span>
             </div>
-            <p class="task-description">${task.descripcion}</p>
+            <p class="task-description" title="${descEscapada}">${task.descripcion}</p>
             <div class="task-info">
                 <span>📅 ${task.fecha}</span>
                 <span>🕐 ${task.hora}</span>
@@ -125,7 +134,7 @@ class TaskManager {
         `;
     }
 
-    render(filtroActual = "TODAS") {
+    render(filtroActual = "TODAS", filtroCategoria = "TODAS") {
         const listaPorHacer = document.querySelector("#listaPorHacer");
         const listaProceso = document.querySelector("#listaProceso");
         const listaTerminadas = document.querySelector("#listaTerminadas");
@@ -149,10 +158,9 @@ class TaskManager {
         }
 
         const tareasFiltradas = this.tasks.filter(function (task) {
-            if (filtroActual === "TODAS") {
-                return true;
-            }
-            return task.status === filtroActual;
+            const matchEstado = filtroActual === "TODAS" || task.status === filtroActual;
+            const matchCategoria = filtroCategoria === "TODAS" || task.categoria === filtroCategoria;
+            return matchEstado && matchCategoria;
         });
 
         for (let task of tareasFiltradas) {
@@ -169,6 +177,24 @@ class TaskManager {
             if (task.status === "COMPLETADA") {
                 listaTerminadas.innerHTML += html;
             }
+        }
+
+        const emptyHtml = (emoji, texto, emoji2) => `
+            <div class="empty-state">
+                <span class="empty-state__icon">${emoji}</span>
+                <p class="empty-state__text">${texto}</p>
+                <span class="empty-state__icon">${emoji2}</span>
+            </div>
+        `;
+
+        if (listaPorHacer.children.length === 0) {
+            listaPorHacer.innerHTML = emptyHtml('💅', 'No hay tareas pendientes','🫂');
+        }
+        if (listaProceso.children.length === 0) {
+            listaProceso.innerHTML = emptyHtml('🤗', 'Nada en proceso','🤸🏽‍♀️');
+        }
+        if (listaTerminadas.children.length === 0) {
+            listaTerminadas.innerHTML = emptyHtml('🥺', 'Sin tareas completadas','🫪');
         }
     }
 }
