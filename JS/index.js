@@ -1,6 +1,5 @@
 const formulario = document.querySelector("#formularioTareas");
 
-// ELEMENTOS
 const nombreTarea = document.querySelector('#nombreTarea');
 const descripcionTarea = document.querySelector('#descripcionTarea');
 const categoriaTarea = document.querySelector('#categoriaTarea');
@@ -15,48 +14,41 @@ const btnCancelarEdicion = document.querySelector('#btnCancelarEdicion');
 const formCard = document.querySelector('.form-card');
 const filtroCategoriaSelect = document.querySelector('#filtroCategoria');
 
-const taskManager = new TaskManager();
-taskManager.load();
-
 let filtroActual = "TODAS";
 let categoriaActual = "TODAS";
 let taskEditandoId = null;
 
+const taskManager = new TaskManager();
+taskManager.load().then(() => {
+    taskManager.render(filtroActual, categoriaActual);
+    actualizarProgreso();
+    actualizarContadoresFiltro();
+});
+
 configurarFecha();
-taskManager.render(filtroActual, categoriaActual);
-actualizarProgreso();
-actualizarContadoresFiltro();
-cargarTareasEjemplo();
 
 function validFormFieldInput(data) {
-    const nombre = data.nombre.trim();
-    const descripcion = data.descripcion.trim();
-    const categoria = data.categoria.trim();
-    const fecha = data.fecha.trim();
-    const hora = data.hora.trim();
-    const prioridad = data.prioridad.trim();
+    data.nombre = data.nombre.trim();
+    data.descripcion = data.descripcion.trim();
+    data.categoria = data.categoria.trim();
+    data.fecha = data.fecha.trim();
+    data.hora = data.hora.trim();
+    data.prioridad = data.prioridad.trim();
 
-    if (nombre === '' || descripcion === '' || categoria === '' || fecha === '' || hora === '' || prioridad === '') { return false; }
+    if (data.nombre === '' || data.descripcion === '' || data.categoria === '' || data.fecha === '' || data.hora === '' || data.prioridad === '') { return false; }
     return true;
 }
 
-formulario.addEventListener('submit', function (event) {
+formulario.addEventListener('submit', async function (event) {
     event.preventDefault();
 
-    const nombre = nombreTarea.value;
-    const descripcion = descripcionTarea.value;
-    const categoria = categoriaTarea.value;
-    const fecha = fechaTarea.value;
-    const hora = horaTarea.value;
-    const prioridad = prioridadTarea.value;
-
     const data = {
-        nombre,
-        descripcion,
-        categoria,
-        fecha,
-        hora,
-        prioridad,
+        nombre: nombreTarea.value,
+        descripcion: descripcionTarea.value,
+        categoria: categoriaTarea.value,
+        fecha: fechaTarea.value,
+        hora: horaTarea.value,
+        prioridad: prioridadTarea.value,
     };
 
     if (!validFormFieldInput(data)) {
@@ -88,49 +80,60 @@ formulario.addEventListener('submit', function (event) {
 
     mensajeError.classList.add("d-none");
 
-    if (taskEditandoId) {
-        taskManager.editTask(taskEditandoId, data);
-        taskEditandoId = null;
-        document.querySelector('#btnAgregarTarea').textContent = 'Agregar tarea';
-        btnCancelarEdicion.classList.add('d-none');
-        formCard.classList.remove('form-editing');
+    try {
+        if (taskEditandoId) {
+            const resultado = await taskManager.editTask(taskEditandoId, data);
+            if (!resultado) {
+                Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo actualizar la tarea. Verifica que el servidor esté corriendo.' });
+                return;
+            }
+            taskEditandoId = null;
+            document.querySelector('#btnAgregarTarea').textContent = 'Agregar tarea';
+            btnCancelarEdicion.classList.add('d-none');
+            formCard.classList.remove('form-editing');
 
-        taskManager.save();
-        taskManager.render(filtroActual, categoriaActual);
-        actualizarProgreso();
-        actualizarContadoresFiltro();
+            taskManager.render(filtroActual, categoriaActual);
+            actualizarProgreso();
+            actualizarContadoresFiltro();
 
-        Swal.fire({
-            icon: "success",
-            title: "Tarea actualizada",
-            text: "La tarea fue actualizada correctamente."
-        }).then(() => {
-            formulario.reset();
-            configurarFecha();
-        });
-    } else {
-        taskManager.addTask(
-            data.nombre,
-            data.descripcion,
-            data.categoria,
-            data.fecha,
-            data.hora,
-            data.prioridad
-        );
+            Swal.fire({
+                icon: "success",
+                title: "Tarea actualizada",
+                text: "La tarea fue actualizada correctamente."
+            }).then(() => {
+                formulario.reset();
+                configurarFecha();
+            });
+        } else {
+            const resultado = await taskManager.addTask(
+                data.nombre,
+                data.descripcion,
+                data.categoria,
+                data.fecha,
+                data.hora,
+                data.prioridad
+            );
+            if (!resultado) {
+                Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo crear la tarea. Verifica que el servidor esté corriendo.' });
+                return;
+            }
 
-        taskManager.save();
-        taskManager.render(filtroActual, categoriaActual);
-        actualizarProgreso();
-        actualizarContadoresFiltro();
+            taskManager.render(filtroActual, categoriaActual);
+            actualizarProgreso();
+            actualizarContadoresFiltro();
 
-        Swal.fire({
-            icon: "success",
-            title: "Tarea agregada con éxito",
-            text: "La tarea fue registrada correctamente."
-        }).then(() => {
-            formulario.reset();
-            configurarFecha();
-        });
+            Swal.fire({
+                icon: "success",
+                title: "Tarea agregada con éxito",
+                text: "La tarea fue registrada correctamente."
+            }).then(() => {
+                formulario.reset();
+                configurarFecha();
+            });
+        }
+    } catch (error) {
+        console.error('Error inesperado:', error);
+        Swal.fire({ icon: 'error', title: 'Error inesperado', text: 'Ocurrió un error inesperado. Intenta de nuevo.' });
     }
 });
 
@@ -144,7 +147,7 @@ function configurarFecha() {
     fechaTarea.max = "2100-12-31";
 }
 
-listaTareas.addEventListener("click", function (event) {
+listaTareas.addEventListener("click", async function (event) {
     const botonEstado = event.target.closest(".done-button");
     const botonEditar = event.target.closest(".edit-button");
     const botonEliminar = event.target.closest(".delete-button");
@@ -156,18 +159,38 @@ listaTareas.addEventListener("click", function (event) {
 
         if (!task) return;
 
-        if (task.status === "PORHACER") {
-            task.status = "ENPROCESO";
-        } else if (task.status === "ENPROCESO") {
-            task.status = "COMPLETADA";
-        } else if (task.status === "COMPLETADA") {
-            task.status = "PORHACER";
-        }
+        try {
+            let nuevoStatus;
+            if (task.status === "PORHACER") {
+                nuevoStatus = "ENPROCESO";
+            } else if (task.status === "ENPROCESO") {
+                nuevoStatus = "COMPLETADA";
+            } else {
+                nuevoStatus = "PORHACER";
+            }
 
-        taskManager.save();
-        taskManager.render(filtroActual, categoriaActual);
-        actualizarProgreso();
-        actualizarContadoresFiltro();
+            const resultado = await taskManager.editTask(taskId, {
+                nombre: task.nombre,
+                descripcion: task.descripcion,
+                categoria: task.categoria,
+                fecha: task.fecha,
+                hora: task.hora,
+                prioridad: task.prioridad,
+                status: nuevoStatus
+            });
+
+            if (!resultado) {
+                Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo cambiar el estado de la tarea.' });
+                return;
+            }
+
+            taskManager.render(filtroActual, categoriaActual);
+            actualizarProgreso();
+            actualizarContadoresFiltro();
+        } catch (error) {
+            console.error('Error al cambiar estado:', error);
+            Swal.fire({ icon: 'error', title: 'Error', text: 'Ocurrió un error al cambiar el estado.' });
+        }
     }
 
     if (botonEditar) {
@@ -204,20 +227,28 @@ listaTareas.addEventListener("click", function (event) {
             cancelButtonColor: '#6c757d',
             confirmButtonText: 'Sí, eliminar',
             cancelButtonText: 'Cancelar'
-        }).then((result) => {
+        }).then(async (result) => {
             if (result.isConfirmed) {
-                taskManager.deleteTask(taskId);
-                taskManager.save();
-                taskManager.render(filtroActual, categoriaActual);
-                actualizarProgreso();
-                actualizarContadoresFiltro();
-                Swal.fire({
-                    icon: "success",
-                    title: "Tarea eliminada",
-                    text: "La tarea fue eliminada.",
-                    timer: 1500,
-                    showConfirmButton: false
-                });
+                try {
+                    const resultado = await taskManager.deleteTask(taskId);
+                    if (!resultado) {
+                        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo eliminar la tarea.' });
+                        return;
+                    }
+                    taskManager.render(filtroActual, categoriaActual);
+                    actualizarProgreso();
+                    actualizarContadoresFiltro();
+                    Swal.fire({
+                        icon: "success",
+                        title: "Tarea eliminada",
+                        text: "La tarea fue eliminada.",
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                } catch (error) {
+                    console.error('Error al eliminar:', error);
+                    Swal.fire({ icon: 'error', title: 'Error', text: 'Ocurrió un error al eliminar la tarea.' });
+                }
             }
         });
     }
@@ -286,17 +317,3 @@ function actualizarReloj() {
 
 actualizarReloj();
 setInterval(actualizarReloj, 1000);
-
-function cargarTareasEjemplo() {
-    if (taskManager.tasks.length > 0) return;
-
-    taskManager.addTask('Comprar víveres', 'Leche, huevos, pan', 'Compras', '2026-09-10', '10:00', 'Alta');
-    taskManager.addTask('Estudiar JavaScript', 'Repasar arrays y objetos', 'Estudio', '2026-09-11', '14:00', 'Media');
-    taskManager.addTask('Pagar servicios', 'Agua, luz, internet', 'Finanzas', '2026-09-12', '09:00', 'Alta');
-    taskManager.addTask('Ir al dentista', 'Control de rutina', 'Personal', '2026-09-05', '10:00', 'Media');
-
-    taskManager.save();
-    taskManager.render(filtroActual, categoriaActual);
-    actualizarProgreso();
-    actualizarContadoresFiltro();
-}

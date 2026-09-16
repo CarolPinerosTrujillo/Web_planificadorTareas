@@ -47,16 +47,11 @@ Actualmente el proyecto se encuentra en desarrollo y se está construyendo sigui
 
 ---
 
-## 🧪 Pruebas unitarias
+## 🧪 Pruebas
 
-El archivo `JS/tests.js` contiene pruebas que validan:
+Las pruebas se realizan manualmente desde el navegador (ver `documentacion.md` sección 11) y con Postman (sección 10).
 
-- Métodos de la clase TaskManager (addTask, deleteTask, editTask, getTaskById).
-- Persistencia con LocalStorage (save/load).
-- Cambio de estado de tareas.
-- Renderizado en el DOM.
-
-Las pruebas se ejecutan con el botón "Ejecutar pruebas" en el formulario.
+El archivo `JS/tests.js` fue eliminado porque usaban la API síncrona de localStorage y fallaban con la API asíncrona de fetch.
 
 ---
 
@@ -97,8 +92,7 @@ Web_planificadorTareas/
 │   └── styles.css
 ├── JS/
 │   ├── taskManager.js
-│   ├── index.js
-│   └── tests.js
+│   └── index.js
 ├── img/
 │   └── (iconos e imágenes)
 ├── .gitignore

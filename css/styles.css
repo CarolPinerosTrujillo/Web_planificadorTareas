@@ -222,7 +222,12 @@ body {
 .header-main {
     padding: 16px;
     border-radius: 0;
-    background: linear-gradient(90deg, var(--color-black), var(--color-purple));
+    background: linear-gradient(180deg, var(--color-purple-bright), var(--color-purple-dark));
+
+        --color-purple-dark:   #3d1e84;
+    --color-purple:        #4c2372;
+    --color-purple-bright: #6d4cff;
+    --color-purple-light:  #995aeb;
 }
 
 .logo-header {

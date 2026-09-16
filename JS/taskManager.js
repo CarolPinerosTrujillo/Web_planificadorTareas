@@ -1,65 +1,117 @@
+const API_URL = 'http://localhost:8080/api/tasks';
+
+function escapeHtml(texto) {
+    if (!texto) return '';
+    return texto
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 class TaskManager {
-    constructor(currentId = 0) {
+    constructor() {
         this.tasks = [];
-        this.currentId = currentId;
     }
 
-    addTask(nombre, descripcion, categoria, fecha, hora, prioridad) {
-        this.currentId++;
-        this.tasks.push({
-            id: this.currentId,
-            nombre: nombre,
-            descripcion: descripcion,
-            fecha: fecha,
-            hora: hora,
-            prioridad: prioridad,
-            categoria: categoria,
-            status: 'PORHACER'
-        });
+    async addTask(nombre, descripcion, categoria, fecha, hora, prioridad) {
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    nombre,
+                    descripcion,
+                    categoria,
+                    fecha,
+                    hora,
+                    prioridad,
+                    status: 'PORHACER'
+                })
+            });
+            if (!response.ok) {
+                const error = await response.text();
+                console.error('Error al crear tarea:', error);
+                return null;
+            }
+            const nuevaTarea = await response.json();
+            this.tasks.push(nuevaTarea);
+            return nuevaTarea;
+        } catch (error) {
+            console.error('Error de red al crear tarea:', error.message);
+            return null;
+        }
     }
 
     getTaskById(taskId) {
-        let foundTask;
-        for (let task of this.tasks) {
-            if (task.id === taskId) {
-                foundTask = task;
-                break;
+        return this.tasks.find(t => t.id === taskId);
+    }
+
+    async deleteTask(taskId) {
+        try {
+            const response = await fetch(`${API_URL}/${taskId}`, {
+                method: 'DELETE'
+            });
+            if (!response.ok) {
+                console.error('Error al eliminar tarea');
+                return false;
             }
-        }
-        return foundTask;
-    }
-
-    deleteTask(taskId) {
-        this.tasks = this.tasks.filter(task => task.id !== taskId);
-    }
-
-    editTask(taskId, nuevosDatos) {
-        const task = this.getTaskById(taskId);
-        if (task) {
-            task.nombre = nuevosDatos.nombre;
-            task.descripcion = nuevosDatos.descripcion;
-            task.categoria = nuevosDatos.categoria;
-            task.fecha = nuevosDatos.fecha;
-            task.hora = nuevosDatos.hora;
-            task.prioridad = nuevosDatos.prioridad;
+            this.tasks = this.tasks.filter(task => task.id !== taskId);
+            return true;
+        } catch (error) {
+            console.error('Error de red al eliminar tarea:', error.message);
+            return false;
         }
     }
 
-    save() {
-        const tasksJson = JSON.stringify(this.tasks);
-        localStorage.setItem('tasks', tasksJson);
-        const currentId = String(this.currentId);
-        localStorage.setItem('currentId', currentId);
+    async editTask(taskId, nuevosDatos) {
+        try {
+            const existente = this.getTaskById(taskId);
+            const datosAEnviar = {
+                nombre: nuevosDatos.nombre,
+                descripcion: nuevosDatos.descripcion,
+                categoria: nuevosDatos.categoria,
+                fecha: nuevosDatos.fecha,
+                hora: nuevosDatos.hora,
+                prioridad: nuevosDatos.prioridad,
+                status: nuevosDatos.status || (existente ? existente.status : 'PORHACER')
+            };
+
+            const response = await fetch(`${API_URL}/${taskId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(datosAEnviar)
+            });
+            if (!response.ok) {
+                const error = await response.text();
+                console.error('Error al actualizar tarea:', error);
+                return null;
+            }
+            const tareaActualizada = await response.json();
+            const index = this.tasks.findIndex(t => t.id === taskId);
+            if (index !== -1) {
+                this.tasks[index] = tareaActualizada;
+            }
+            return tareaActualizada;
+        } catch (error) {
+            console.error('Error de red al actualizar tarea:', error.message);
+            return null;
+        }
     }
 
-    load() {
-        const tasksJson = localStorage.getItem('tasks');
-        if (tasksJson) {
-            this.tasks = JSON.parse(tasksJson);
-        }
-        const currentId = localStorage.getItem('currentId');
-        if (currentId) {
-            this.currentId = Number(currentId);
+    async load() {
+        try {
+            const response = await fetch(API_URL);
+            if (!response.ok) {
+                console.error('Error al cargar tareas');
+                this.tasks = [];
+                return;
+            }
+            this.tasks = await response.json();
+        } catch (error) {
+            console.error('Error de red al cargar tareas:', error.message);
+            this.tasks = [];
         }
     }
 
@@ -95,18 +147,19 @@ class TaskManager {
 
         const estado = estadoConfig[task.status] || estadoConfig.PORHACER;
         const categoriaClass = task.categoria.toLowerCase();
-        const descEscapada = task.descripcion.replace(/"/g, '&quot;');
+        const nombreSeguro = escapeHtml(task.nombre);
+        const descSegura = escapeHtml(task.descripcion);
 
         return `
         <div class="task-card ${estado.clase} task-card--entering" data-task-id="${task.id}">
             <div class="task-card__header">
                 <div class="task-card__title-wrapper">
                     <span class="task-status-icon">${estado.icono}</span>
-                    <h6 class="tituloTarea" title="${descEscapada}">${task.nombre}</h6>
+                    <h6 class="tituloTarea" title="${descSegura}">${nombreSeguro}</h6>
                 </div>
                 <span class="estado-badge">${estado.texto}</span>
             </div>
-            <p class="task-description" title="${descEscapada}">${task.descripcion}</p>
+            <p class="task-description" title="${descSegura}">${descSegura}</p>
             <div class="task-info">
                 <span>📅 ${task.fecha}</span>
                 <span>🕐 ${task.hora}</span>
@@ -188,13 +241,13 @@ class TaskManager {
         `;
 
         if (listaPorHacer.children.length === 0) {
-            listaPorHacer.innerHTML = emptyHtml('💅', 'No hay tareas pendientes','🫂');
+            listaPorHacer.innerHTML = emptyHtml('💅', 'No hay tareas pendientes', '🫂');
         }
         if (listaProceso.children.length === 0) {
-            listaProceso.innerHTML = emptyHtml('🤗', 'Nada en proceso','🤸🏽‍♀️');
+            listaProceso.innerHTML = emptyHtml('🤗', 'Nada en proceso', '🤸🏽‍♀️');
         }
         if (listaTerminadas.children.length === 0) {
-            listaTerminadas.innerHTML = emptyHtml('🥺', 'Sin tareas completadas','🫪');
+            listaTerminadas.innerHTML = emptyHtml('🥺', 'Sin tareas completadas', '🫪');
         }
     }
 }
