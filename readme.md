@@ -1,8 +1,6 @@
 <p align="center">
-  <img src="./img/logo-footer.png" alt="PlannerApp" width="200">
+  <img src="./img/logo-footer.png" alt="PlannerApp" width="300">
 </p>
-
-<h1 align="center">Planifica tus tareas</h1>
 
 <p align="center">
   <strong>Aplicación web para la organización y planificación de tareas diarias</strong>
