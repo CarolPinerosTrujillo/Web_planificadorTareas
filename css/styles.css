@@ -174,13 +174,18 @@ body {
     padding: 8px;
     font-weight: 600;
     font-size: .95rem;
-    background: linear-gradient(90deg, var(--color-black), var(--color-purple));
+    background: linear-gradient(180deg, var(--color-purple-bright), var(--color-purple));
     color: var(--color-text-white);
     border: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(109, 76, 255, 0.3);
 }
 
 .btn-gradient:hover {
-    opacity: 0.9;
+    background: linear-gradient(180deg, var(--color-purple-hover), var(--color-purple-bright));
+    color: var(--color-text-white);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(109, 76, 255, 0.4);
 }
 
 .btn-cancelar {
@@ -282,7 +287,7 @@ body {
     padding: 10px 12px;
     margin-bottom: 8px;
     box-shadow: var(--shadow-card);
-    transition: transform .25s ease, box-shadow .25s ease;
+    transition: transform .25s ease, box-shadow .25s ease, filter .25s ease;
     overflow: hidden;
     color: var(--color-text-dark);
 }
@@ -297,8 +302,9 @@ body {
 }
 
 .task-card:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-card-lg);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.1);
+    filter: brightness(1.02);
 }
 
 .task-card h6 {
@@ -394,6 +400,7 @@ body {
    ============================================= */
 .estado-pendiente {
     background: linear-gradient(135deg, var(--color-pendiente-from), var(--color-pendiente-to));
+    transition: filter .25s ease;
 }
 
 .estado-pendiente .estado-badge {
@@ -410,12 +417,17 @@ body {
     background: var(--color-pendiente-border);
 }
 
+.estado-pendiente:hover {
+    filter: brightness(1.12);
+}
+
 /* =============================================
    ESTADOS - EN PROCESO
    ============================================= */
 .estado-proceso {
     background: linear-gradient(135deg, var(--color-proceso-from), var(--color-proceso-to));
     color: var(--color-text-white);
+    transition: filter .25s ease;
 }
 
 .estado-proceso .estado-badge {
@@ -432,11 +444,16 @@ body {
     background: var(--color-proceso-border);
 }
 
+.estado-proceso:hover {
+    filter: brightness(1.12);
+}
+
 /* =============================================
    ESTADOS - TERMINADA
    ============================================= */
 .estado-terminado {
     background: linear-gradient(135deg, var(--color-terminado-from), var(--color-terminado-to));
+    transition: filter .25s ease;
 }
 
 .estado-terminado .estado-badge {
@@ -451,6 +468,10 @@ body {
 
 .estado-terminado::before {
     background: var(--color-terminado-border);
+}
+
+.estado-terminado:hover {
+    filter: brightness(1.12);
 }
 
 .estado-badge {
@@ -492,10 +513,28 @@ body {
     transform: translateY(-2px);
 }
 
-.filtro.active {
-    background: linear-gradient(90deg, var(--color-black), var(--color-purple));
+.filtro.active[data-status="TODAS"] {
+    background: var(--color-purple-dark);
     color: var(--color-text-white);
     box-shadow: 0 4px 12px var(--color-purple-glow);
+}
+
+.filtro.active[data-status="PORHACER"] {
+    background: linear-gradient(135deg, var(--color-pendiente-from), var(--color-pendiente-to));
+    color: var(--color-text-white);
+    box-shadow: 0 4px 12px rgba(192, 126, 230, 0.4);
+}
+
+.filtro.active[data-status="ENPROCESO"] {
+    background: linear-gradient(135deg, var(--color-proceso-from), var(--color-proceso-to));
+    color: var(--color-text-white);
+    box-shadow: 0 4px 12px rgba(124, 76, 243, 0.4);
+}
+
+.filtro.active[data-status="COMPLETADA"] {
+    background: linear-gradient(135deg, var(--color-terminado-from), var(--color-terminado-to));
+    color: var(--color-text-white);
+    box-shadow: 0 4px 12px rgba(24, 216, 180, 0.4);
 }
 
 .filtro-count {
@@ -819,7 +858,7 @@ body {
    FOOTER
    ============================================= */
 .footer-main {
-    background: linear-gradient(90deg, var(--color-black), var(--color-purple));
+    background: linear-gradient(180deg, var(--color-purple-dark), var(--color-black));
     padding: 24px 0 18px;
     margin-top: 40px;
     border-radius: 0;
