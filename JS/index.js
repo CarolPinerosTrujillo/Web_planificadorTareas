@@ -25,6 +25,7 @@ taskManager.load().then(() => {
     renderMiniCalendar();
     actualizarProgreso();
     actualizarContadoresFiltro();
+    actualizarEmailBadge();
 });
 
 configurarFecha();
@@ -421,9 +422,44 @@ document.getElementById('calendarNext').addEventListener('click', function () {
 renderMiniCalendar();
 
 /* =============================================
-   EMAIL RECOVERY
+   EMAIL BADGE + RECOVERY
    ============================================= */
-document.getElementById('btnLinkEmail').addEventListener('click', async () => {
+function actualizarEmailBadge() {
+    const email = taskManager.getLinkedEmail();
+    const badge = document.getElementById('emailBadge');
+    if (email) {
+        badge.innerHTML = `<img src="img/email.png" class="navbar-icon navbar-icon--white" alt="Email"> ${email}`;
+        badge.classList.remove('d-none');
+        badge.title = 'Tu email vinculado — Click para desvincular';
+    } else {
+        badge.classList.add('d-none');
+        badge.title = '';
+    }
+}
+
+document.getElementById('emailBadge').addEventListener('click', async () => {
+    const email = taskManager.getLinkedEmail();
+    if (!email) return;
+
+    const result = await Swal.fire({
+        title: '¿Desvincular email?',
+        html: `Vas a desvincular <b>${email}</b><br>No podrás recuperar tareas con este email.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, desvincular',
+        cancelButtonText: 'Cancelar'
+    });
+
+    if (result.isConfirmed) {
+        taskManager.unlinkEmail();
+        actualizarEmailBadge();
+        Swal.fire('Email desvinculado', '', 'success');
+    }
+});
+
+document.getElementById('btnNavVincular').addEventListener('click', async () => {
     const { value: email } = await Swal.fire({
         title: 'Vincular email',
         input: 'email',
@@ -437,6 +473,7 @@ document.getElementById('btnLinkEmail').addEventListener('click', async () => {
     if (email) {
         const resultado = await taskManager.registerEmail(email);
         if (resultado) {
+            actualizarEmailBadge();
             Swal.fire('Email vinculado', 'Podrás recuperar tus tareas con este email', 'success');
         } else {
             Swal.fire('Error', 'No se pudo vincular el email. Verifica que el servidor esté corriendo.', 'error');
@@ -444,7 +481,7 @@ document.getElementById('btnLinkEmail').addEventListener('click', async () => {
     }
 });
 
-document.getElementById('btnRecoverTasks').addEventListener('click', async () => {
+document.getElementById('btnNavRecuperar').addEventListener('click', async () => {
     const { value: email } = await Swal.fire({
         title: 'Recuperar tareas',
         input: 'email',
@@ -477,6 +514,7 @@ document.getElementById('btnRecoverTasks').addEventListener('click', async () =>
 
     const deviceId = await taskManager.verifyRecoveryCode(email, code);
     if (deviceId) {
+        actualizarEmailBadge();
         await taskManager.load();
         taskManager.render(filtroActual, categoriaActual, filtroFecha);
         renderMiniCalendar();

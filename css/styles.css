@@ -419,6 +419,57 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 }
 
 /* =============================================
+   NAVBAR ICON BUTTONS + EMAIL BADGE
+   ============================================= */
+.navbar-icon-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-white);
+}
+
+.navbar-icon-btn:hover {
+    background: rgba(109, 76, 255, 0.4);
+    transform: scale(1.15);
+    box-shadow: 0 0 8px rgba(109, 76, 255, 0.4);
+}
+
+.navbar-icon {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+}
+
+.navbar-icon--white {
+    filter: brightness(0) invert(1);
+}
+
+.email-badge {
+    font-size: 0.75rem;
+    padding: 4px 12px;
+    border-radius: 20px;
+    background: rgba(109, 76, 255, 0.25);
+    color: #e0d4ff;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    font-family: 'Poppins', sans-serif;
+}
+
+.email-badge:hover {
+    background: rgba(109, 76, 255, 0.45);
+    transform: scale(1.05);
+}
+
+/* =============================================
    HEADER
    ============================================= */
 .header-main {
@@ -1145,6 +1196,10 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     .footer-logo { height: 22px; }
     .footer-texto { font-size: .7rem; }
     .footer-autora { font-size: .62rem; }
+    .navbar-right { gap: 4px; }
+    .email-badge { font-size: 0.65rem; padding: 3px 8px; }
+    .navbar-icon-btn { width: 28px; height: 28px; }
+    .navbar-icon { width: 15px; height: 15px; }
 }
 
 @media (max-width: 400px) {
@@ -1153,6 +1208,8 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     .titulo-app img { height: 36px; }
     .navbar-brand { font-size: .85rem; }
     .navbar-reloj { font-size: .6rem; gap: 5px; }
+    .navbar-icon-btn { width: 26px; height: 26px; }
+    .navbar-icon { width: 14px; height: 14px; }
     .form-card { padding: 14px; border-radius: 16px; }
     .form-control, .form-select { height: 36px; font-size: .85rem; }
     .icon-box { width: 36px; }

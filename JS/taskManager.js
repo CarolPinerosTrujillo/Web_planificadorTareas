@@ -135,7 +135,11 @@ class TaskManager {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, deviceId: this.deviceId })
             });
-            return response.ok;
+            if (response.ok) {
+                localStorage.setItem('planner_user_email', email);
+                return true;
+            }
+            return false;
         } catch (error) {
             console.error('Error de red al registrar email:', error.message);
             return false;
@@ -166,12 +170,21 @@ class TaskManager {
             if (!response.ok) return null;
             const data = await response.json();
             localStorage.setItem('planner_device_id', data.deviceId);
+            localStorage.setItem('planner_user_email', email);
             this.deviceId = data.deviceId;
             return data.deviceId;
         } catch (error) {
             console.error('Error de red al verificar código:', error.message);
             return null;
         }
+    }
+
+    getLinkedEmail() {
+        return localStorage.getItem('planner_user_email');
+    }
+
+    unlinkEmail() {
+        localStorage.removeItem('planner_user_email');
     }
 
     getStats() {
