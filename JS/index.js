@@ -16,11 +16,13 @@ const filtroCategoriaSelect = document.querySelector('#filtroCategoria');
 
 let filtroActual = "TODAS";
 let categoriaActual = "TODAS";
+let filtroFecha = null;
 let taskEditandoId = null;
 
 const taskManager = new TaskManager();
 taskManager.load().then(() => {
-    taskManager.render(filtroActual, categoriaActual);
+    taskManager.render(filtroActual, categoriaActual, filtroFecha);
+    renderMiniCalendar();
     actualizarProgreso();
     actualizarContadoresFiltro();
 });
@@ -92,7 +94,8 @@ formulario.addEventListener('submit', async function (event) {
             btnCancelarEdicion.classList.add('d-none');
             formCard.classList.remove('form-editing');
 
-            taskManager.render(filtroActual, categoriaActual);
+            taskManager.render(filtroActual, categoriaActual, filtroFecha);
+        renderMiniCalendar();
             actualizarProgreso();
             actualizarContadoresFiltro();
 
@@ -118,7 +121,8 @@ formulario.addEventListener('submit', async function (event) {
                 return;
             }
 
-            taskManager.render(filtroActual, categoriaActual);
+            taskManager.render(filtroActual, categoriaActual, filtroFecha);
+        renderMiniCalendar();
             actualizarProgreso();
             actualizarContadoresFiltro();
 
@@ -184,7 +188,8 @@ listaTareas.addEventListener("click", async function (event) {
                 return;
             }
 
-            taskManager.render(filtroActual, categoriaActual);
+            taskManager.render(filtroActual, categoriaActual, filtroFecha);
+        renderMiniCalendar();
             actualizarProgreso();
             actualizarContadoresFiltro();
         } catch (error) {
@@ -235,7 +240,8 @@ listaTareas.addEventListener("click", async function (event) {
                         Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo eliminar la tarea.' });
                         return;
                     }
-                    taskManager.render(filtroActual, categoriaActual);
+                    taskManager.render(filtroActual, categoriaActual, filtroFecha);
+        renderMiniCalendar();
                     actualizarProgreso();
                     actualizarContadoresFiltro();
                     Swal.fire({
@@ -259,7 +265,8 @@ botonesFiltro.forEach(function (boton) {
         botonesFiltro.forEach(btn => btn.classList.remove("active"));
         boton.classList.add("active");
         filtroActual = boton.dataset.status;
-        taskManager.render(filtroActual, categoriaActual);
+        taskManager.render(filtroActual, categoriaActual, filtroFecha);
+        renderMiniCalendar();
         actualizarProgreso();
         actualizarContadoresFiltro();
     });
@@ -267,7 +274,8 @@ botonesFiltro.forEach(function (boton) {
 
 filtroCategoriaSelect.addEventListener('change', function () {
     categoriaActual = this.value;
-    taskManager.render(filtroActual, categoriaActual);
+    taskManager.render(filtroActual, categoriaActual, filtroFecha);
+        renderMiniCalendar();
     actualizarProgreso();
     actualizarContadoresFiltro();
 });
@@ -317,3 +325,165 @@ function actualizarReloj() {
 
 actualizarReloj();
 setInterval(actualizarReloj, 1000);
+
+/* =============================================
+   MINI CALENDARIO
+   ============================================= */
+let calendarDate = new Date();
+
+function renderMiniCalendar() {
+    const year = calendarDate.getFullYear();
+    const month = calendarDate.getMonth();
+
+    const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+    document.getElementById('calendarTitle').textContent = `${monthNames[month]} ${year}`;
+
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDay = (firstDay.getDay() + 6) % 7;
+    const totalDays = lastDay.getDate();
+
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    const taskDates = {};
+    taskManager.tasks.forEach(task => {
+        if (task.fecha) {
+            if (!taskDates[task.fecha]) taskDates[task.fecha] = 0;
+            taskDates[task.fecha]++;
+        }
+    });
+
+    let html = '';
+
+    for (let i = 0; i < startDay; i++) {
+        html += '<div class="mini-calendar__day mini-calendar__day--empty"></div>';
+    }
+
+    for (let day = 1; day <= totalDays; day++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const isToday = dateStr === todayStr;
+        const hasTask = taskDates[dateStr];
+        const isSelected = dateStr === filtroFecha;
+
+        let classes = 'mini-calendar__day';
+        if (isToday) classes += ' mini-calendar__day--today';
+        if (hasTask) classes += ' mini-calendar__day--has-task';
+        if (isSelected) classes += ' mini-calendar__day--selected';
+
+        const tooltip = hasTask ? `title="${hasTask} tarea(s) — Click para filtrar"` : 'title="Click para filtrar"';
+
+        html += `<div class="${classes}" data-date="${dateStr}" ${tooltip}>${day}</div>`;
+    }
+
+    document.getElementById('calendarDays').innerHTML = html;
+
+    document.querySelectorAll('.mini-calendar__day[data-date]').forEach(dayEl => {
+        dayEl.addEventListener('click', function () {
+            const date = this.dataset.date;
+            if (filtroFecha === date) {
+                filtroFecha = null;
+            } else {
+                filtroFecha = date;
+            }
+            taskManager.render(filtroActual, categoriaActual, filtroFecha);
+            renderMiniCalendar();
+        });
+    });
+
+    const filterInfo = document.getElementById('calendarFilterInfo');
+    if (filtroFecha) {
+        filterInfo.textContent = `Filtrando: ${filtroFecha} — Click para limpiar`;
+        filterInfo.classList.remove('d-none');
+        filterInfo.onclick = function () {
+            filtroFecha = null;
+            taskManager.render(filtroActual, categoriaActual, filtroFecha);
+            renderMiniCalendar();
+        };
+    } else {
+        filterInfo.classList.add('d-none');
+        filterInfo.onclick = null;
+    }
+}
+
+document.getElementById('calendarPrev').addEventListener('click', function () {
+    calendarDate.setMonth(calendarDate.getMonth() - 1);
+    renderMiniCalendar();
+});
+
+document.getElementById('calendarNext').addEventListener('click', function () {
+    calendarDate.setMonth(calendarDate.getMonth() + 1);
+    renderMiniCalendar();
+});
+
+renderMiniCalendar();
+
+/* =============================================
+   EMAIL RECOVERY
+   ============================================= */
+document.getElementById('btnLinkEmail').addEventListener('click', async () => {
+    const { value: email } = await Swal.fire({
+        title: 'Vincular email',
+        input: 'email',
+        inputLabel: 'Tu email para recuperar tareas',
+        inputPlaceholder: 'ejemplo@correo.com',
+        showCancelButton: true,
+        cancelButtonText: 'Cancelar',
+        confirmButtonText: 'Vincular'
+    });
+
+    if (email) {
+        const resultado = await taskManager.registerEmail(email);
+        if (resultado) {
+            Swal.fire('Email vinculado', 'Podrás recuperar tus tareas con este email', 'success');
+        } else {
+            Swal.fire('Error', 'No se pudo vincular el email. Verifica que el servidor esté corriendo.', 'error');
+        }
+    }
+});
+
+document.getElementById('btnRecoverTasks').addEventListener('click', async () => {
+    const { value: email } = await Swal.fire({
+        title: 'Recuperar tareas',
+        input: 'email',
+        inputLabel: 'Ingresa tu email registrado',
+        inputPlaceholder: 'ejemplo@correo.com',
+        showCancelButton: true,
+        cancelButtonText: 'Cancelar',
+        confirmButtonText: 'Enviar código'
+    });
+
+    if (!email) return;
+
+    const enviado = await taskManager.sendRecoveryCode(email);
+    if (!enviado) {
+        Swal.fire('Error', 'No se pudo enviar el código. Verifica tu email.', 'error');
+        return;
+    }
+
+    const { value: code } = await Swal.fire({
+        title: 'Código de verificación',
+        input: 'text',
+        inputLabel: 'Revisa tu email e ingresa el código',
+        inputPlaceholder: '123456',
+        showCancelButton: true,
+        cancelButtonText: 'Cancelar',
+        confirmButtonText: 'Verificar'
+    });
+
+    if (!code) return;
+
+    const deviceId = await taskManager.verifyRecoveryCode(email, code);
+    if (deviceId) {
+        await taskManager.load();
+        taskManager.render(filtroActual, categoriaActual, filtroFecha);
+        renderMiniCalendar();
+        actualizarProgreso();
+        actualizarContadoresFiltro();
+        Swal.fire('Tareas recuperadas', 'Tus tareas han sido restauradas correctamente', 'success');
+    } else {
+        Swal.fire('Error', 'Código incorrecto o expirado', 'error');
+    }
+});

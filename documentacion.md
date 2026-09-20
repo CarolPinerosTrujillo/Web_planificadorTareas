@@ -1411,3 +1411,285 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
 | `release version 25 not supported` | Docker image no tiene Java 25 | Usar Java 21 en `pom.xml` y Dockerfile |
 | `FATAL: tenant/user not found` | Username o host incorrecto | Verificar env vars en Render |
 | `Network is unreachable` | Supabase pausado o env vars incorrectas | Restaurar proyecto en Supabase |
+
+---
+
+## 16. Device ID + Email Recovery (Sesión 20 Sept 2026)
+
+### 16.1 ¿Qué es y por qué?
+
+**Problema:** Las tareas se guardan en PostgreSQL, pero si el usuario borra los datos del navegador o cambia de dispositivo, pierde el acceso a sus tareas. No hay forma de saber qué tareas pertenecen a qué usuario.
+
+**Solución:** Cada navegador recibe un ID único (`device_id`) que se guarda en `localStorage`. Este ID se envía al backend para filtrar las tareas. Si el usuario vincula su email, puede recuperar el `device_id` y así sus tareas.
+
+**Flujo visual:**
+```
+PRIMERA VEZ:
+  Usuario abre la app
+  → Se genera un device_id único (ej: dev_a1b2c3d4-...)
+  → Se guarda en localStorage
+  → Se envía al backend con cada petición
+  → Las tareas se asocian a ese device_id
+
+RECUPERACIÓN:
+  Usuario pierde acceso (borró navegador, cambió de PC)
+  → Click "Recuperar tareas"
+  → Ingresa su email registrado
+  → Backend envía código de 6 dígitos al email
+  → Ingresa el código
+  → Backend retorna el device_id guardado
+  → Se restaura en localStorage
+  → Las tareas aparecen de nuevo
+```
+
+### 16.2 Cambios en el Backend
+
+#### Nueva entidad `User.java`
+
+```java
+@Entity
+@Table(name = "users")
+public class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Email
+    @Column(nullable = false, unique = true)
+    private String email;
+
+    @Column(name = "device_id", nullable = false)
+    private String deviceId;
+
+    @Column(name = "recover_code")
+    private String recoverCode;
+
+    @Column(name = "recover_code_expires")
+    private LocalDateTime recoverCodeExpires;
+}
+```
+
+**¿Qué guarda?** El email del usuario, su device_id, y un código temporal para recuperación.
+
+#### Nuevo `UserRepository.java`
+
+```java
+public interface UserRepository extends JpaRepository<User, Long> {
+    Optional<User> findByEmail(String email);
+    Optional<User> findByRecoverCode(String recoverCode);
+}
+```
+
+#### Nuevo `AuthController.java`
+
+| Endpoint | Método | Descripción |
+|----------|--------|-------------|
+| `/api/auth/register` | POST | Registrar email con device_id |
+| `/api/auth/send-code` | POST | Enviar código de recuperación al email |
+| `/api/auth/verify-code` | POST | Verificar código y obtener device_id |
+
+#### Nuevo `EmailService.java`
+
+```java
+@Service
+public class EmailService {
+    @Autowired
+    private JavaMailSender mailSender;
+
+    public void sendRecoveryCode(String to, String code) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(to);
+        message.setSubject("PlannerApp - Código de recuperación");
+        message.setText("Tu código es: " + code + "\nVálido por 10 minutos.");
+        mailSender.send(message);
+    }
+}
+```
+
+#### Modificaciones existentes
+
+| Archivo | Cambio |
+|---------|--------|
+| `Task.java` | +1 campo: `deviceId` |
+| `TaskRepository.java` | +1 método: `findByDeviceId()` |
+| `TaskController.java` | GET filtra por `?deviceId=xxx` |
+| `pom.xml` | +1 dependencia: `spring-boot-starter-mail` |
+| `application.properties` | +4 propiedades de email |
+
+### 16.3 Cambios en el Frontend
+
+#### `taskManager.js` — Nuevos métodos
+
+```javascript
+class TaskManager {
+    constructor() {
+        this.tasks = [];
+        this.deviceId = this.getOrCreateDeviceId();  // ← NUEVO
+    }
+
+    getOrCreateDeviceId() {  // ← NUEVO
+        let id = localStorage.getItem('planner_device_id');
+        if (!id) {
+            id = 'dev_' + crypto.randomUUID();
+            localStorage.setItem('planner_device_id', id);
+        }
+        return id;
+    }
+
+    async load() {
+        // AHORA filtra por device_id
+        const response = await fetch(`${API_URL}?deviceId=${this.deviceId}`);
+        // ...
+    }
+
+    async addTask(...) {
+        // AHORA envía deviceId
+        body: JSON.stringify({ ..., deviceId: this.deviceId })
+        // ...
+    }
+
+    // NUEVOS métodos para recuperación
+    async registerEmail(email) { ... }
+    async sendRecoveryCode(email) { ... }
+    async verifyRecoveryCode(email, code) { ... }
+}
+```
+
+#### `index.html` — Botones en el footer
+
+```html
+<div class="recovery-buttons mt-3">
+    <button id="btnLinkEmail" class="btn btn-sm btn-outline-light me-2">
+        📧 Vincular email
+    </button>
+    <button id="btnRecoverTasks" class="btn btn-sm btn-outline-light">
+        🔄 Recuperar tareas
+    </button>
+</div>
+```
+
+#### `index.js` — Lógica de recuperación
+
+```javascript
+// Vincular email
+document.getElementById('btnLinkEmail').addEventListener('click', async () => {
+    const { value: email } = await Swal.fire({
+        title: 'Vincular email',
+        input: 'email',
+        inputLabel: 'Tu email para recuperar tareas',
+        inputPlaceholder: 'ejemplo@correo.com'
+    });
+    if (email) {
+        await taskManager.registerEmail(email);
+    }
+});
+
+// Recuperar tareas
+document.getElementById('btnRecoverTasks').addEventListener('click', async () => {
+    // 1. Pedir email
+    // 2. Enviar código
+    // 3. Pedir código
+    // 4. Verificar → obtener device_id
+    // 5. Restaurar tareas
+});
+```
+
+### 16.4 Configuración de Gmail para envío de emails
+
+#### Paso 1: Activar verificación en 2 pasos
+
+1. Ve a [myaccount.google.com](https://myaccount.google.com)
+2. Izquierda: **Seguridad**
+3. En "Cómo acceder a Google", busca **Verificación en 2 pasos**
+4. Actívala (necesitas tu teléfono)
+
+#### Paso 2: Generar contraseña de aplicación
+
+1. En la misma página de Seguridad
+2. Busca **Contraseñas de aplicaciones** (puede estar abajo del todo)
+3. Selecciona la app: **Correo**
+4. Selecciona el dispositivo: **Otra (nombre personalizado)**
+5. Escribe: `PlannerApp`
+6. Click **Generar**
+7. Google mostrará una contraseña de 16 caracteres: `abcd efgh ijkl mnop`
+8. **CÓPIALA** — solo se muestra una vez
+
+#### Paso 3: Configurar en Render
+
+En tu servicio de Render → Environment → agregar:
+
+| Variable | Valor |
+|----------|-------|
+| `MAIL_HOST` | `smtp.gmail.com` |
+| `MAIL_PORT` | `587` |
+| `MAIL_USERNAME` | `tu-email@gmail.com` |
+| `MAIL_PASSWORD` | `abcdefghijklmnop` (la de 16 chars sin espacios) |
+
+**IMPORTANTE:** La contraseña de aplicación NO es tu contraseña normal de Gmail. Es una contraseña especial que Google genera solo para esta app.
+
+### 16.5 Base de datos — Tabla `users`
+
+La tabla se crea automáticamente con `spring.jpa.hibernate.ddl-auto=update`. No necesitas crearla manualmente.
+
+Estructura:
+```sql
+CREATE TABLE users (
+    id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    device_id VARCHAR(64) NOT NULL,
+    recover_code VARCHAR(10),
+    recover_code_expires TIMESTAMP,
+    created_at TIMESTAMP
+);
+```
+
+### 16.6 Pruebas
+
+#### Prueba 1: Crear tareas con device_id
+1. Abre la app en el navegador
+2. Abre la consola del navegador (F12)
+3. Escribe: `localStorage.getItem('planner_device_id')`
+4. Debería mostrar algo como `dev_a1b2c3d4-e5f6-...`
+5. Crea una tarea
+6. En consola escribe: `taskManager.tasks`
+7. Verifica que la tarea tiene el campo `deviceId`
+
+#### Prueba 2: Vincular email
+1. Click "📧 Vincular email" en el footer
+2. Ingresa tu email
+3. SweetAlert confirma "Email vinculado"
+
+#### Prueba 3: Recuperar tareas
+1. Borra los datos del navegador (Application → Local Storage → borrar todo)
+2. Recarga la página → no verás tareas
+3. Click "🔄 Recuperar tareas"
+4. Ingresa tu email
+5. Revisa tu email → código de 6 dígitos
+6. Ingresa el código
+7. ¡Las tareas aparecen de nuevo!
+
+### 16.7 Seguridad
+
+| Medida | Descripción |
+|--------|-------------|
+| Código expira en 10 min | `LocalDateTime.now().plusMinutes(10)` |
+| Código aleatorio de 6 dígitos | `String.format("%06d", new Random().nextInt(999999))` |
+| Verificación de expiración | El controller verifica `recoverCodeExpires.isBefore(LocalDateTime.now())` |
+| Device ID único | Generado con `crypto.randomUUID()` |
+
+### 16.8 Resumen de archivos nuevos/modificados
+
+| Archivo | Estado | Descripción |
+|---------|--------|-------------|
+| `Task.java` | MODIFICADO | +campo `deviceId` |
+| `User.java` | NUEVO | Entidad para usuarios |
+| `TaskRepository.java` | MODIFICADO | +método `findByDeviceId()` |
+| `UserRepository.java` | NUEVO | Repository para User |
+| `TaskController.java` | MODIFICADO | GET filtra por deviceId |
+| `AuthController.java` | NUEVO | Endpoints de auth |
+| `EmailService.java` | NUEVO | Envío de emails |
+| `pom.xml` | MODIFICADO | +dependencia Spring Mail |
+| `application.properties` | MODIFICADO | +config email |
+| `taskManager.js` | MODIFICADO | +device ID + métodos recovery |
+| `index.js` | MODIFICADO | +UI email recovery |
+| `index.html` | MODIFICADO | +botones en footer |

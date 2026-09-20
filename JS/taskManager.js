@@ -1,5 +1,6 @@
 //const API_URL = 'http://localhost:8080/api/tasks';
 const API_URL = 'https://plannerappcp-backend.onrender.com/api/tasks';
+const AUTH_API = API_URL.replace('/tasks', '/auth');
 
 function escapeHtml(texto) {
     if (!texto) return '';
@@ -14,6 +15,16 @@ function escapeHtml(texto) {
 class TaskManager {
     constructor() {
         this.tasks = [];
+        this.deviceId = this.getOrCreateDeviceId();
+    }
+
+    getOrCreateDeviceId() {
+        let id = localStorage.getItem('planner_device_id');
+        if (!id) {
+            id = 'dev_' + crypto.randomUUID();
+            localStorage.setItem('planner_device_id', id);
+        }
+        return id;
     }
 
     async addTask(nombre, descripcion, categoria, fecha, hora, prioridad) {
@@ -28,7 +39,8 @@ class TaskManager {
                     fecha,
                     hora,
                     prioridad,
-                    status: 'PORHACER'
+                    status: 'PORHACER',
+                    deviceId: this.deviceId
                 })
             });
             if (!response.ok) {
@@ -103,7 +115,7 @@ class TaskManager {
 
     async load() {
         try {
-            const response = await fetch(API_URL);
+            const response = await fetch(`${API_URL}?deviceId=${this.deviceId}`);
             if (!response.ok) {
                 console.error('Error al cargar tareas');
                 this.tasks = [];
@@ -113,6 +125,52 @@ class TaskManager {
         } catch (error) {
             console.error('Error de red al cargar tareas:', error.message);
             this.tasks = [];
+        }
+    }
+
+    async registerEmail(email) {
+        try {
+            const response = await fetch(`${AUTH_API}/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, deviceId: this.deviceId })
+            });
+            return response.ok;
+        } catch (error) {
+            console.error('Error de red al registrar email:', error.message);
+            return false;
+        }
+    }
+
+    async sendRecoveryCode(email) {
+        try {
+            const response = await fetch(`${AUTH_API}/send-code`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+            return response.ok;
+        } catch (error) {
+            console.error('Error de red al enviar código:', error.message);
+            return false;
+        }
+    }
+
+    async verifyRecoveryCode(email, code) {
+        try {
+            const response = await fetch(`${AUTH_API}/verify-code`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, code })
+            });
+            if (!response.ok) return null;
+            const data = await response.json();
+            localStorage.setItem('planner_device_id', data.deviceId);
+            this.deviceId = data.deviceId;
+            return data.deviceId;
+        } catch (error) {
+            console.error('Error de red al verificar código:', error.message);
+            return null;
         }
     }
 
@@ -188,7 +246,7 @@ class TaskManager {
         `;
     }
 
-    render(filtroActual = "TODAS", filtroCategoria = "TODAS") {
+    render(filtroActual = "TODAS", filtroCategoria = "TODAS", filtroFecha = null) {
         const listaPorHacer = document.querySelector("#listaPorHacer");
         const listaProceso = document.querySelector("#listaProceso");
         const listaTerminadas = document.querySelector("#listaTerminadas");
@@ -214,7 +272,8 @@ class TaskManager {
         const tareasFiltradas = this.tasks.filter(function (task) {
             const matchEstado = filtroActual === "TODAS" || task.status === filtroActual;
             const matchCategoria = filtroCategoria === "TODAS" || task.categoria === filtroCategoria;
-            return matchEstado && matchCategoria;
+            const matchFecha = !filtroFecha || task.fecha === filtroFecha;
+            return matchEstado && matchCategoria && matchFecha;
         });
 
         for (let task of tareasFiltradas) {

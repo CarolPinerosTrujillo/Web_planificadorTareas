@@ -53,7 +53,42 @@
                             Planea tu día
                             <img src="./img/calendar.png" alt="" height="40" class="ms-2">
                         </h3>
-                        
+
+                        <!-- MINI CALENDARIO -->
+                        <div class="mini-calendar" id="miniCalendar">
+                            <div class="mini-calendar__header">
+                                <span class="mini-calendar__title" id="calendarTitle"></span>
+                                <div class="mini-calendar__nav">
+                                    <button type="button" class="mini-calendar__btn" id="calendarPrev">◀</button>
+                                    <button type="button" class="mini-calendar__btn" id="calendarNext">▶</button>
+                                </div>
+                            </div>
+                            <div class="mini-calendar__weekdays">
+                                <span class="mini-calendar__weekday">Lu</span>
+                                <span class="mini-calendar__weekday">Ma</span>
+                                <span class="mini-calendar__weekday">Mi</span>
+                                <span class="mini-calendar__weekday">Ju</span>
+                                <span class="mini-calendar__weekday">Vi</span>
+                                <span class="mini-calendar__weekday">Sa</span>
+                                <span class="mini-calendar__weekday">Do</span>
+                            </div>
+                            <div class="mini-calendar__days" id="calendarDays"></div>
+                            <div class="mini-calendar__legend">
+                                <div class="mini-calendar__legend-item">
+                                    <div class="mini-calendar__legend-dot" style="background: var(--color-purple-bright);"></div>
+                                    <span>Hoy</span>
+                                </div>
+                                <div class="mini-calendar__legend-item">
+                                    <div class="mini-calendar__legend-dot" style="background: var(--color-purple);"></div>
+                                    <span>Seleccionado</span>
+                                </div>
+                                <div class="mini-calendar__legend-item">
+                                    <div class="mini-calendar__legend-dot" style="background: var(--color-terminado-from);"></div>
+                                    <span>Con tareas</span>
+                                </div>
+                            </div>
+                            <div id="calendarFilterInfo" class="mini-calendar__filter-info d-none"></div>
+                        </div>
 
                         <!-- Nombre -->
                         <label for="nombreTarea" class="form-label">
@@ -245,6 +280,14 @@
             <img src="img/logo-nav.png" alt="PlannerApp" class="footer-logo">
             <p class="footer-texto">&copy; 2026 Planner App CP</p>
             <p class="footer-autora">Carol Piñeros</p>
+            <div class="recovery-buttons mt-3">
+                <button id="btnLinkEmail" class="btn btn-sm btn-outline-light me-2" title="Vincular tu email para recuperar tareas">
+                    📧 Vincular email
+                </button>
+                <button id="btnRecoverTasks" class="btn btn-sm btn-outline-light" title="Recuperar tareas si perdiste el acceso">
+                    🔄 Recuperar tareas
+                </button>
+            </div>
         </div>
     </footer>
 

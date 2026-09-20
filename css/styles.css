@@ -167,6 +167,200 @@ body {
 }
 
 /* =============================================
+   INPUT DATE - ESTILO NATIVO
+   ============================================= */
+input[type="date"] {
+    font-family: 'Poppins', sans-serif;
+    font-size: .85rem;
+    color: var(--color-text-dark);
+    cursor: pointer;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+    opacity: .6;
+    cursor: pointer;
+    transition: opacity .2s ease;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
+
+/* =============================================
+   MINI CALENDARIO
+   ============================================= */
+.mini-calendar {
+    background: var(--color-bg-white);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: var(--shadow-card);
+    margin-bottom: 16px;
+}
+
+.mini-calendar__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.mini-calendar__title {
+    font-size: .9rem;
+    font-weight: 700;
+    color: var(--color-text-dark);
+    text-transform: capitalize;
+}
+
+.mini-calendar__nav {
+    display: flex;
+    gap: 4px;
+}
+
+.mini-calendar__btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 8px;
+    background: var(--color-bg-filtro);
+    color: var(--color-text-muted);
+    font-size: .75rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .2s ease;
+}
+
+.mini-calendar__btn:hover {
+    background: var(--color-purple-bright);
+    color: var(--color-text-white);
+}
+
+.mini-calendar__weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    margin-bottom: 4px;
+}
+
+.mini-calendar__weekday {
+    text-align: center;
+    font-size: .6rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    padding: 4px 0;
+    text-transform: uppercase;
+}
+
+.mini-calendar__days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.mini-calendar__day {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: .7rem;
+    font-weight: 500;
+    color: var(--color-text-dark);
+    cursor: pointer;
+    transition: all .2s ease;
+    position: relative;
+}
+
+.mini-calendar__day:hover {
+    background: var(--color-bg-filtro);
+}
+
+.mini-calendar__day--empty {
+    cursor: default;
+}
+
+.mini-calendar__day--today {
+    background: var(--color-purple-bright);
+    color: var(--color-text-white);
+    font-weight: 700;
+}
+
+.mini-calendar__day--today:hover {
+    background: var(--color-purple-hover);
+}
+
+.mini-calendar__day--has-task::after {
+    content: '';
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--color-terminado-from);
+    position: absolute;
+    bottom: 3px;
+}
+
+.mini-calendar__day--today.mini-calendar__day--has-task::after {
+    background: var(--color-text-white);
+}
+
+.mini-calendar__day--selected {
+    background: var(--color-purple);
+    color: var(--color-text-white);
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(76, 35, 114, 0.4);
+}
+
+.mini-calendar__day--selected::after {
+    background: var(--color-text-white);
+}
+
+.mini-calendar__day--selected.mini-calendar__day--today {
+    background: var(--color-purple-dark);
+}
+
+.mini-calendar__legend {
+    display: flex;
+    gap: 12px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--color-border-filter);
+}
+
+.mini-calendar__legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: .6rem;
+    color: var(--color-text-muted);
+}
+
+.mini-calendar__legend-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+.mini-calendar__filter-info {
+    margin-top: 8px;
+    padding: 6px 10px;
+    background: var(--color-purple-focus);
+    border-radius: 8px;
+    font-size: .7rem;
+    font-weight: 600;
+    color: var(--color-purple-dark);
+    text-align: center;
+    cursor: pointer;
+    transition: all .2s ease;
+}
+
+.mini-calendar__filter-info:hover {
+    background: var(--color-purple-bright);
+    color: var(--color-text-white);
+}
+
+/* =============================================
    BOTONES
    ============================================= */
 .btn-gradient {
