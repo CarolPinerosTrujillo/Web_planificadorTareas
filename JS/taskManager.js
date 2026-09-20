@@ -29,6 +29,7 @@ class TaskManager {
 
     async addTask(nombre, descripcion, categoria, fecha, hora, prioridad) {
         try {
+            const email = this.getLinkedEmail();
             const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -40,7 +41,8 @@ class TaskManager {
                     hora,
                     prioridad,
                     status: 'PORHACER',
-                    deviceId: this.deviceId
+                    deviceId: this.deviceId,
+                    userEmail: email || ''
                 })
             });
             if (!response.ok) {
@@ -115,7 +117,14 @@ class TaskManager {
 
     async load() {
         try {
-            const response = await fetch(`${API_URL}?deviceId=${this.deviceId}`);
+            const email = this.getLinkedEmail();
+            let url = API_URL;
+            if (email) {
+                url += `?userEmail=${encodeURIComponent(email)}`;
+            } else {
+                url += `?deviceId=${this.deviceId}`;
+            }
+            const response = await fetch(url);
             if (!response.ok) {
                 console.error('Error al cargar tareas');
                 this.tasks = [];

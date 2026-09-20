@@ -455,6 +455,11 @@ document.getElementById('emailBadge').addEventListener('click', async () => {
     if (result.isConfirmed) {
         taskManager.unlinkEmail();
         actualizarEmailBadge();
+        await taskManager.load();
+        taskManager.render(filtroActual, categoriaActual, filtroFecha);
+        renderMiniCalendar();
+        actualizarProgreso();
+        actualizarContadoresFiltro();
         Swal.fire('Email desvinculado', '', 'success');
     }
 });
@@ -474,6 +479,11 @@ document.getElementById('btnNavVincular').addEventListener('click', async () => 
         const resultado = await taskManager.registerEmail(email);
         if (resultado) {
             actualizarEmailBadge();
+            await taskManager.load();
+            taskManager.render(filtroActual, categoriaActual, filtroFecha);
+            renderMiniCalendar();
+            actualizarProgreso();
+            actualizarContadoresFiltro();
             Swal.fire('Email vinculado', 'Podrás recuperar tus tareas con este email', 'success');
         } else {
             Swal.fire('Error', 'No se pudo vincular el email. Verifica que el servidor esté corriendo.', 'error');
