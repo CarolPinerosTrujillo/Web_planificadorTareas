@@ -478,13 +478,14 @@ document.getElementById('btnNavVincular').addEventListener('click', async () => 
     if (email) {
         const resultado = await taskManager.registerEmail(email);
         if (resultado) {
+            await taskManager.migrateLocalToBackend();
             actualizarEmailBadge();
             await taskManager.load();
             taskManager.render(filtroActual, categoriaActual, filtroFecha);
             renderMiniCalendar();
             actualizarProgreso();
             actualizarContadoresFiltro();
-            Swal.fire('Email vinculado', 'Podrás recuperar tus tareas con este email', 'success');
+            Swal.fire('Email vinculado', 'Tus tareas han sido guardadas en la nube', 'success');
         } else {
             Swal.fire('Error', 'No se pudo vincular el email. Verifica que el servidor esté corriendo.', 'error');
         }

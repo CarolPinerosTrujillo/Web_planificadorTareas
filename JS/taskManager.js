@@ -27,32 +27,65 @@ class TaskManager {
         return id;
     }
 
+    // ========== MÉTODOS LOCALES (localStorage) ==========
+
+    loadLocal() {
+        const data = localStorage.getItem('planner_tasks_local');
+        this.tasks = data ? JSON.parse(data) : [];
+    }
+
+    saveLocal() {
+        localStorage.setItem('planner_tasks_local', JSON.stringify(this.tasks));
+    }
+
+    generateLocalId() {
+        return Date.now() + Math.floor(Math.random() * 1000);
+    }
+
+    // ========== MÉTODOS CRUD DUales ==========
+
     async addTask(nombre, descripcion, categoria, fecha, hora, prioridad) {
+        const email = this.getLinkedEmail();
         try {
-            const email = this.getLinkedEmail();
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+            if (email) {
+                // CON email → backend
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        nombre,
+                        descripcion,
+                        categoria,
+                        fecha,
+                        hora,
+                        prioridad,
+                        status: 'PORHACER',
+                        userEmail: email
+                    })
+                });
+                if (!response.ok) {
+                    console.error('Error al crear tarea:', await response.text());
+                    return null;
+                }
+                const nuevaTarea = await response.json();
+                this.tasks.push(nuevaTarea);
+                return nuevaTarea;
+            } else {
+                // SIN email → localStorage
+                const nuevaTarea = {
+                    id: this.generateLocalId(),
                     nombre,
                     descripcion,
                     categoria,
                     fecha,
                     hora,
                     prioridad,
-                    status: 'PORHACER',
-                    deviceId: this.deviceId,
-                    userEmail: email || ''
-                })
-            });
-            if (!response.ok) {
-                const error = await response.text();
-                console.error('Error al crear tarea:', error);
-                return null;
+                    status: 'PORHACER'
+                };
+                this.tasks.push(nuevaTarea);
+                this.saveLocal();
+                return nuevaTarea;
             }
-            const nuevaTarea = await response.json();
-            this.tasks.push(nuevaTarea);
-            return nuevaTarea;
         } catch (error) {
             console.error('Error de red al crear tarea:', error.message);
             return null;
@@ -64,15 +97,21 @@ class TaskManager {
     }
 
     async deleteTask(taskId) {
+        const email = this.getLinkedEmail();
         try {
-            const response = await fetch(`${API_URL}/${taskId}`, {
-                method: 'DELETE'
-            });
-            if (!response.ok) {
-                console.error('Error al eliminar tarea');
-                return false;
+            if (email) {
+                // CON email → backend
+                const response = await fetch(`${API_URL}/${taskId}`, {
+                    method: 'DELETE'
+                });
+                if (!response.ok) {
+                    console.error('Error al eliminar tarea');
+                    return false;
+                }
             }
+            // SIN email o con email → actualizar array local
             this.tasks = this.tasks.filter(task => task.id !== taskId);
+            if (!email) this.saveLocal();
             return true;
         } catch (error) {
             console.error('Error de red al eliminar tarea:', error.message);
@@ -81,34 +120,51 @@ class TaskManager {
     }
 
     async editTask(taskId, nuevosDatos) {
+        const email = this.getLinkedEmail();
         try {
             const existente = this.getTaskById(taskId);
-            const datosAEnviar = {
-                nombre: nuevosDatos.nombre,
-                descripcion: nuevosDatos.descripcion,
-                categoria: nuevosDatos.categoria,
-                fecha: nuevosDatos.fecha,
-                hora: nuevosDatos.hora,
-                prioridad: nuevosDatos.prioridad,
-                status: nuevosDatos.status || (existente ? existente.status : 'PORHACER')
-            };
 
-            const response = await fetch(`${API_URL}/${taskId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(datosAEnviar)
-            });
-            if (!response.ok) {
-                const error = await response.text();
-                console.error('Error al actualizar tarea:', error);
-                return null;
+            if (email) {
+                // CON email → backend
+                const datosAEnviar = {
+                    nombre: nuevosDatos.nombre,
+                    descripcion: nuevosDatos.descripcion,
+                    categoria: nuevosDatos.categoria,
+                    fecha: nuevosDatos.fecha,
+                    hora: nuevosDatos.hora,
+                    prioridad: nuevosDatos.prioridad,
+                    status: nuevosDatos.status || (existente ? existente.status : 'PORHACER')
+                };
+                const response = await fetch(`${API_URL}/${taskId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(datosAEnviar)
+                });
+                if (!response.ok) {
+                    console.error('Error al actualizar tarea:', await response.text());
+                    return null;
+                }
+                const tareaActualizada = await response.json();
+                const index = this.tasks.findIndex(t => t.id === taskId);
+                if (index !== -1) this.tasks[index] = tareaActualizada;
+                return tareaActualizada;
+            } else {
+                // SIN email → localStorage
+                const index = this.tasks.findIndex(t => t.id === taskId);
+                if (index === -1) return null;
+                this.tasks[index] = {
+                    ...this.tasks[index],
+                    nombre: nuevosDatos.nombre,
+                    descripcion: nuevosDatos.descripcion,
+                    categoria: nuevosDatos.categoria,
+                    fecha: nuevosDatos.fecha,
+                    hora: nuevosDatos.hora,
+                    prioridad: nuevosDatos.prioridad,
+                    status: nuevosDatos.status || this.tasks[index].status
+                };
+                this.saveLocal();
+                return this.tasks[index];
             }
-            const tareaActualizada = await response.json();
-            const index = this.tasks.findIndex(t => t.id === taskId);
-            if (index !== -1) {
-                this.tasks[index] = tareaActualizada;
-            }
-            return tareaActualizada;
         } catch (error) {
             console.error('Error de red al actualizar tarea:', error.message);
             return null;
@@ -116,26 +172,61 @@ class TaskManager {
     }
 
     async load() {
+        const email = this.getLinkedEmail();
         try {
-            const email = this.getLinkedEmail();
-            let url = API_URL;
             if (email) {
-                url += `?userEmail=${encodeURIComponent(email)}`;
+                // CON email → backend
+                const response = await fetch(`${API_URL}?userEmail=${encodeURIComponent(email)}`);
+                if (!response.ok) {
+                    console.error('Error al cargar tareas');
+                    this.tasks = [];
+                    return;
+                }
+                this.tasks = await response.json();
             } else {
-                url += `?deviceId=${this.deviceId}`;
+                // SIN email → localStorage
+                this.loadLocal();
             }
-            const response = await fetch(url);
-            if (!response.ok) {
-                console.error('Error al cargar tareas');
-                this.tasks = [];
-                return;
-            }
-            this.tasks = await response.json();
         } catch (error) {
             console.error('Error de red al cargar tareas:', error.message);
             this.tasks = [];
         }
     }
+
+    // ========== MIGRAR LOCALES AL VINCULAR EMAIL ==========
+
+    async migrateLocalToBackend() {
+        const email = this.getLinkedEmail();
+        if (!email) return;
+
+        const localData = localStorage.getItem('planner_tasks_local');
+        if (!localData) return;
+
+        const tareasLocales = JSON.parse(localData);
+        for (const tarea of tareasLocales) {
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        nombre: tarea.nombre,
+                        descripcion: tarea.descripcion,
+                        categoria: tarea.categoria,
+                        fecha: tarea.fecha,
+                        hora: tarea.hora,
+                        prioridad: tarea.prioridad,
+                        status: tarea.status,
+                        userEmail: email
+                    })
+                });
+            } catch (error) {
+                console.error('Error migrando tarea:', error.message);
+            }
+        }
+        localStorage.removeItem('planner_tasks_local');
+    }
+
+    // ========== AUTH / EMAIL ==========
 
     async registerEmail(email) {
         try {
@@ -196,6 +287,8 @@ class TaskManager {
         localStorage.removeItem('planner_user_email');
     }
 
+    // ========== ESTADÍSTICAS ==========
+
     getStats() {
         const total = this.tasks.length;
         const completadas = this.tasks.filter(t => t.status === 'COMPLETADA').length;
@@ -203,6 +296,8 @@ class TaskManager {
         const enProceso = this.tasks.filter(t => t.status === 'ENPROCESO').length;
         return { total, completadas, porHacer, enProceso };
     }
+
+    // ========== RENDER ==========
 
     createTaskHtml(task) {
         const estadoConfig = {
