@@ -27,6 +27,21 @@ class TaskManager {
         return id;
     }
 
+    // ========== TOKEN ==========
+
+    getAuthToken() {
+        return localStorage.getItem('planner_auth_token');
+    }
+
+    authHeaders() {
+        const token = this.getAuthToken();
+        return token ? { 'Authorization': 'Bearer ' + token } : {};
+    }
+
+    hasValidSession() {
+        return !!(this.getLinkedEmail() && this.getAuthToken());
+    }
+
     // ========== MÉTODOS LOCALES (localStorage) ==========
 
     loadLocal() {
@@ -42,16 +57,15 @@ class TaskManager {
         return Date.now() + Math.floor(Math.random() * 1000);
     }
 
-    // ========== MÉTODOS CRUD DUales ==========
+    // ========== MÉTODOS CRUD DUALES ==========
 
     async addTask(nombre, descripcion, categoria, fecha, hora, prioridad) {
         const email = this.getLinkedEmail();
         try {
-            if (email) {
-                // CON email → backend
+            if (email && this.hasValidSession()) {
                 const response = await fetch(API_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...this.authHeaders() },
                     body: JSON.stringify({
                         nombre,
                         descripcion,
@@ -59,10 +73,13 @@ class TaskManager {
                         fecha,
                         hora,
                         prioridad,
-                        status: 'PORHACER',
-                        userEmail: email
+                        status: 'PORHACER'
                     })
                 });
+                if (response.status === 401) {
+                    this.handleSessionExpired();
+                    return null;
+                }
                 if (!response.ok) {
                     console.error('Error al crear tarea:', await response.text());
                     return null;
@@ -71,7 +88,6 @@ class TaskManager {
                 this.tasks.push(nuevaTarea);
                 return nuevaTarea;
             } else {
-                // SIN email → localStorage
                 const nuevaTarea = {
                     id: this.generateLocalId(),
                     nombre,
@@ -99,17 +115,20 @@ class TaskManager {
     async deleteTask(taskId) {
         const email = this.getLinkedEmail();
         try {
-            if (email) {
-                // CON email → backend
+            if (email && this.hasValidSession()) {
                 const response = await fetch(`${API_URL}/${taskId}`, {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    headers: this.authHeaders()
                 });
+                if (response.status === 401) {
+                    this.handleSessionExpired();
+                    return false;
+                }
                 if (!response.ok) {
                     console.error('Error al eliminar tarea');
                     return false;
                 }
             }
-            // SIN email o con email → actualizar array local
             this.tasks = this.tasks.filter(task => task.id !== taskId);
             if (!email) this.saveLocal();
             return true;
@@ -124,8 +143,7 @@ class TaskManager {
         try {
             const existente = this.getTaskById(taskId);
 
-            if (email) {
-                // CON email → backend
+            if (email && this.hasValidSession()) {
                 const datosAEnviar = {
                     nombre: nuevosDatos.nombre,
                     descripcion: nuevosDatos.descripcion,
@@ -137,9 +155,13 @@ class TaskManager {
                 };
                 const response = await fetch(`${API_URL}/${taskId}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...this.authHeaders() },
                     body: JSON.stringify(datosAEnviar)
                 });
+                if (response.status === 401) {
+                    this.handleSessionExpired();
+                    return null;
+                }
                 if (!response.ok) {
                     console.error('Error al actualizar tarea:', await response.text());
                     return null;
@@ -149,7 +171,6 @@ class TaskManager {
                 if (index !== -1) this.tasks[index] = tareaActualizada;
                 return tareaActualizada;
             } else {
-                // SIN email → localStorage
                 const index = this.tasks.findIndex(t => t.id === taskId);
                 if (index === -1) return null;
                 this.tasks[index] = {
@@ -174,9 +195,15 @@ class TaskManager {
     async load() {
         const email = this.getLinkedEmail();
         try {
-            if (email) {
-                // CON email → backend
-                const response = await fetch(`${API_URL}?userEmail=${encodeURIComponent(email)}`);
+            if (email && this.hasValidSession()) {
+                const response = await fetch(API_URL, {
+                    headers: this.authHeaders()
+                });
+                if (response.status === 401) {
+                    this.handleSessionExpired();
+                    this.tasks = [];
+                    return;
+                }
                 if (!response.ok) {
                     console.error('Error al cargar tareas');
                     this.tasks = [];
@@ -184,7 +211,6 @@ class TaskManager {
                 }
                 this.tasks = await response.json();
             } else {
-                // SIN email → localStorage
                 this.loadLocal();
             }
         } catch (error) {
@@ -193,11 +219,23 @@ class TaskManager {
         }
     }
 
+    handleSessionExpired() {
+        localStorage.removeItem('planner_auth_token');
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Sesión expirada',
+                text: 'Tu código de verificación expiró. Vincula tu email de nuevo.',
+                icon: 'warning',
+                confirmButtonText: 'Entendido'
+            });
+        }
+    }
+
     // ========== MIGRAR LOCALES AL VINCULAR EMAIL ==========
 
     async migrateLocalToBackend() {
         const email = this.getLinkedEmail();
-        if (!email) return;
+        if (!email || !this.hasValidSession()) return;
 
         const localData = localStorage.getItem('planner_tasks_local');
         if (!localData) return;
@@ -207,7 +245,7 @@ class TaskManager {
             try {
                 await fetch(API_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...this.authHeaders() },
                     body: JSON.stringify({
                         nombre: tarea.nombre,
                         descripcion: tarea.descripcion,
@@ -215,8 +253,7 @@ class TaskManager {
                         fecha: tarea.fecha,
                         hora: tarea.hora,
                         prioridad: tarea.prioridad,
-                        status: tarea.status,
-                        userEmail: email
+                        status: tarea.status
                     })
                 });
             } catch (error) {
@@ -236,13 +273,14 @@ class TaskManager {
                 body: JSON.stringify({ email, deviceId: this.deviceId })
             });
             if (response.ok) {
-                localStorage.setItem('planner_user_email', email);
-                return true;
+                const data = await response.json();
+                return { success: true, message: data.message };
             }
-            return false;
+            const err = await response.json();
+            return { success: false, message: err.error };
         } catch (error) {
             console.error('Error de red al registrar email:', error.message);
-            return false;
+            return { success: false, message: 'Error de conexión' };
         }
     }
 
@@ -253,29 +291,39 @@ class TaskManager {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email })
             });
-            return response.ok;
+            if (response.status === 429) {
+                const err = await response.json();
+                return { success: false, message: err.error };
+            }
+            return { success: response.ok };
         } catch (error) {
             console.error('Error de red al enviar código:', error.message);
-            return false;
+            return { success: false, message: 'Error de conexión' };
         }
     }
 
-    async verifyRecoveryCode(email, code) {
+    async verifyAndLogin(email, code) {
         try {
             const response = await fetch(`${AUTH_API}/verify-code`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, code })
             });
-            if (!response.ok) return null;
+            if (!response.ok) {
+                const err = await response.json();
+                return { success: false, message: err.error };
+            }
             const data = await response.json();
-            localStorage.setItem('planner_device_id', data.deviceId);
+            localStorage.setItem('planner_auth_token', data.token);
             localStorage.setItem('planner_user_email', email);
-            this.deviceId = data.deviceId;
-            return data.deviceId;
+            if (data.deviceId) {
+                localStorage.setItem('planner_device_id', data.deviceId);
+                this.deviceId = data.deviceId;
+            }
+            return { success: true, email: data.email };
         } catch (error) {
             console.error('Error de red al verificar código:', error.message);
-            return null;
+            return { success: false, message: 'Error de conexión' };
         }
     }
 
@@ -285,6 +333,7 @@ class TaskManager {
 
     unlinkEmail() {
         localStorage.removeItem('planner_user_email');
+        localStorage.removeItem('planner_auth_token');
     }
 
     // ========== ESTADÍSTICAS ==========

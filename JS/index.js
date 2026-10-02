@@ -422,7 +422,7 @@ document.getElementById('calendarNext').addEventListener('click', function () {
 renderMiniCalendar();
 
 /* =============================================
-   EMAIL BADGE + RECOVERY
+   EMAIL BADGE + OTP VERIFICATION
    ============================================= */
 function actualizarEmailBadge() {
     const email = taskManager.getLinkedEmail();
@@ -464,6 +464,33 @@ document.getElementById('emailBadge').addEventListener('click', async () => {
     }
 });
 
+async function pedirCodigoVerificacion(email) {
+    const { value: code } = await Swal.fire({
+        title: 'Código de verificación',
+        html: `Revisa tu email <b>${email}</b><br>Ingresa el código de 6 dígitos`,
+        input: 'text',
+        inputLabel: 'Código de verificación',
+        inputPlaceholder: '123456',
+        inputAttributes: {
+            maxlength: 6,
+            autocapitalize: 'off',
+            autocorrect: 'off',
+            style: 'text-align:center; font-size:1.5em; letter-spacing:0.5em;'
+        },
+        showCancelButton: true,
+        cancelButtonText: 'Cancelar',
+        confirmButtonText: 'Verificar',
+        showLoaderOnConfirm: true,
+        preConfirm: (code) => {
+            if (!code || code.length !== 6) {
+                Swal.showValidationMessage('El código debe tener 6 dígitos');
+            }
+            return code;
+        }
+    });
+    return code;
+}
+
 document.getElementById('btnNavVincular').addEventListener('click', async () => {
     const { value: email } = await Swal.fire({
         title: 'Vincular email',
@@ -472,24 +499,38 @@ document.getElementById('btnNavVincular').addEventListener('click', async () => 
         inputPlaceholder: 'ejemplo@correo.com',
         showCancelButton: true,
         cancelButtonText: 'Cancelar',
-        confirmButtonText: 'Vincular'
+        confirmButtonText: 'Enviar código',
+        inputValidator: (value) => {
+            if (!value) return 'Necesitas ingresar un email';
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Ingresa un email válido';
+        }
     });
 
-    if (email) {
-        const resultado = await taskManager.registerEmail(email);
-        if (resultado) {
-            await taskManager.migrateLocalToBackend();
-            actualizarEmailBadge();
-            await taskManager.load();
-            taskManager.render(filtroActual, categoriaActual, filtroFecha);
-            renderMiniCalendar();
-            actualizarProgreso();
-            actualizarContadoresFiltro();
-            Swal.fire('Email vinculado', 'Tus tareas han sido guardadas en la nube', 'success');
-        } else {
-            Swal.fire('Error', 'No se pudo vincular el email. Verifica que el servidor esté corriendo.', 'error');
-        }
+    if (!email) return;
+
+    const registro = await taskManager.registerEmail(email);
+    if (!registro.success) {
+        Swal.fire('Error', registro.message || 'No se pudo enviar el código', 'error');
+        return;
     }
+
+    const code = await pedirCodigoVerificacion(email);
+    if (!code) return;
+
+    const login = await taskManager.verifyAndLogin(email, code);
+    if (!login.success) {
+        Swal.fire('Error', login.message || 'Código incorrecto o expirado', 'error');
+        return;
+    }
+
+    await taskManager.migrateLocalToBackend();
+    actualizarEmailBadge();
+    await taskManager.load();
+    taskManager.render(filtroActual, categoriaActual, filtroFecha);
+    renderMiniCalendar();
+    actualizarProgreso();
+    actualizarContadoresFiltro();
+    Swal.fire('Email vinculado', 'Tus tareas han sido guardadas en la nube', 'success');
 });
 
 document.getElementById('btnNavRecuperar').addEventListener('click', async () => {
@@ -500,39 +541,34 @@ document.getElementById('btnNavRecuperar').addEventListener('click', async () =>
         inputPlaceholder: 'ejemplo@correo.com',
         showCancelButton: true,
         cancelButtonText: 'Cancelar',
-        confirmButtonText: 'Enviar código'
+        confirmButtonText: 'Enviar código',
+        inputValidator: (value) => {
+            if (!value) return 'Necesitas ingresar un email';
+        }
     });
 
     if (!email) return;
 
     const enviado = await taskManager.sendRecoveryCode(email);
-    if (!enviado) {
-        Swal.fire('Error', 'No se pudo enviar el código. Verifica tu email.', 'error');
+    if (!enviado.success) {
+        Swal.fire('Error', enviado.message || 'No se pudo enviar el código', 'error');
         return;
     }
 
-    const { value: code } = await Swal.fire({
-        title: 'Código de verificación',
-        input: 'text',
-        inputLabel: 'Revisa tu email e ingresa el código',
-        inputPlaceholder: '123456',
-        showCancelButton: true,
-        cancelButtonText: 'Cancelar',
-        confirmButtonText: 'Verificar'
-    });
-
+    const code = await pedirCodigoVerificacion(email);
     if (!code) return;
 
-    const deviceId = await taskManager.verifyRecoveryCode(email, code);
-    if (deviceId) {
-        actualizarEmailBadge();
-        await taskManager.load();
-        taskManager.render(filtroActual, categoriaActual, filtroFecha);
-        renderMiniCalendar();
-        actualizarProgreso();
-        actualizarContadoresFiltro();
-        Swal.fire('Tareas recuperadas', 'Tus tareas han sido restauradas correctamente', 'success');
-    } else {
-        Swal.fire('Error', 'Código incorrecto o expirado', 'error');
+    const login = await taskManager.verifyAndLogin(email, code);
+    if (!login.success) {
+        Swal.fire('Error', login.message || 'Código incorrecto o expirado', 'error');
+        return;
     }
+
+    actualizarEmailBadge();
+    await taskManager.load();
+    taskManager.render(filtroActual, categoriaActual, filtroFecha);
+    renderMiniCalendar();
+    actualizarProgreso();
+    actualizarContadoresFiltro();
+    Swal.fire('Tareas recuperadas', 'Tus tareas han sido restauradas correctamente', 'success');
 });
