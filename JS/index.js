@@ -464,31 +464,77 @@ document.getElementById('emailBadge').addEventListener('click', async () => {
     }
 });
 
-async function pedirCodigoVerificacion(email) {
-    const { value: code } = await Swal.fire({
+async function pedirCodigoVerificacion(email, resendCallback) {
+    let reenviando = false;
+
+    const result = await Swal.fire({
         title: 'Código de verificación',
-        html: `Revisa tu email <b>${email}</b><br>Ingresa el código de 6 dígitos`,
-        input: 'text',
-        inputLabel: 'Código de verificación',
-        inputPlaceholder: '123456',
-        inputAttributes: {
-            maxlength: 6,
-            autocapitalize: 'off',
-            autocorrect: 'off',
-            style: 'text-align:center; font-size:1.5em; letter-spacing:0.5em;'
-        },
+        html: `
+            <p>Revisa tu email <b>${email}</b></p>
+            <p style="font-size:0.85em; color:#888; margin:5px 0;">
+                Si no lo ves, revisa la carpeta <b>Spam</b> o <b>Correo no deseado</b>
+            </p>
+            <input id="swal-code-input" type="text" maxlength="6"
+                placeholder="000000"
+                style="text-align:center; font-size:1.8em; letter-spacing:0.4em; width:200px;
+                       border:2px solid #7c3aed; border-radius:8px; padding:8px; outline:none;">
+            <p id="swal-countdown" style="font-size:0.8em; color:#aaa; margin-top:8px;">
+                El código expira en 10:00
+            </p>
+        `,
         showCancelButton: true,
         cancelButtonText: 'Cancelar',
         confirmButtonText: 'Verificar',
-        showLoaderOnConfirm: true,
-        preConfirm: (code) => {
+        showDenyButton: true,
+        denyButtonText: 'Reenviar código',
+        allowOutsideClick: false,
+        didOpen: () => {
+            const input = document.getElementById('swal-code-input');
+            input.focus();
+            input.addEventListener('input', () => {
+                input.value = input.value.replace(/\D/g, '');
+            });
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') Swal.clickConfirm();
+            });
+
+            let remaining = 600;
+            const countdownEl = document.getElementById('swal-countdown');
+            const timer = setInterval(() => {
+                remaining--;
+                if (remaining <= 0) {
+                    clearInterval(timer);
+                    countdownEl.textContent = 'Código expirado — reenvía uno nuevo';
+                    countdownEl.style.color = '#e74c3c';
+                    return;
+                }
+                const min = Math.floor(remaining / 60);
+                const sec = String(remaining % 60).padStart(2, '0');
+                countdownEl.textContent = `El código expira en ${min}:${sec}`;
+            }, 1000);
+            Swal.fire().then(() => clearInterval(timer));
+        },
+        preConfirm: () => {
+            const input = document.getElementById('swal-code-input');
+            const code = input ? input.value : '';
             if (!code || code.length !== 6) {
                 Swal.showValidationMessage('El código debe tener 6 dígitos');
+                return false;
             }
             return code;
+        },
+        denyConfirm: () => {
+            return false;
         }
     });
-    return code;
+
+    if (result.isDenied && resendCallback && !reenviando) {
+        reenviando = true;
+        await resendCallback();
+        return await pedirCodigoVerificacion(email, resendCallback);
+    }
+
+    return result.value;
 }
 
 document.getElementById('btnNavVincular').addEventListener('click', async () => {
@@ -514,7 +560,14 @@ document.getElementById('btnNavVincular').addEventListener('click', async () => 
         return;
     }
 
-    const code = await pedirCodigoVerificacion(email);
+    const code = await pedirCodigoVerificacion(email, async () => {
+        const r = await taskManager.registerEmail(email);
+        Swal.fire({
+            toast: true, position: 'top-end', timer: 2500,
+            icon: r.success ? 'success' : 'error',
+            title: r.success ? 'Código reenviado' : (r.message || 'No se pudo reenviar')
+        });
+    });
     if (!code) return;
 
     const login = await taskManager.verifyAndLogin(email, code);
@@ -555,7 +608,14 @@ document.getElementById('btnNavRecuperar').addEventListener('click', async () =>
         return;
     }
 
-    const code = await pedirCodigoVerificacion(email);
+    const code = await pedirCodigoVerificacion(email, async () => {
+        const r = await taskManager.sendRecoveryCode(email);
+        Swal.fire({
+            toast: true, position: 'top-end', timer: 2500,
+            icon: r.success ? 'success' : 'error',
+            title: r.success ? 'Código reenviado' : (r.message || 'No se pudo reenviar')
+        });
+    });
     if (!code) return;
 
     const login = await taskManager.verifyAndLogin(email, code);
