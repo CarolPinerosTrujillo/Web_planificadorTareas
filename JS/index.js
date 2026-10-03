@@ -466,6 +466,7 @@ document.getElementById('emailBadge').addEventListener('click', async () => {
 
 async function pedirCodigoVerificacion(email, resendCallback) {
     let reenviando = false;
+    let timer;
 
     const result = await Swal.fire({
         title: 'Código de verificación',
@@ -500,7 +501,7 @@ async function pedirCodigoVerificacion(email, resendCallback) {
 
             let remaining = 600;
             const countdownEl = document.getElementById('swal-countdown');
-            const timer = setInterval(() => {
+            timer = setInterval(() => {
                 remaining--;
                 if (remaining <= 0) {
                     clearInterval(timer);
@@ -512,7 +513,9 @@ async function pedirCodigoVerificacion(email, resendCallback) {
                 const sec = String(remaining % 60).padStart(2, '0');
                 countdownEl.textContent = `El código expira en ${min}:${sec}`;
             }, 1000);
-            Swal.fire().then(() => clearInterval(timer));
+        },
+        willClose: () => {
+            if (timer) clearInterval(timer);
         },
         preConfirm: () => {
             const input = document.getElementById('swal-code-input');
@@ -523,9 +526,7 @@ async function pedirCodigoVerificacion(email, resendCallback) {
             }
             return code;
         },
-        denyConfirm: () => {
-            return false;
-        }
+        denyConfirm: () => false
     });
 
     if (result.isDenied && resendCallback && !reenviando) {
