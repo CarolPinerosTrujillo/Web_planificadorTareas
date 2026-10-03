@@ -1693,3 +1693,162 @@ CREATE TABLE users (
 | `taskManager.js` | MODIFICADO | +device ID + métodos recovery |
 | `index.js` | MODIFICADO | +UI email recovery |
 | `index.html` | MODIFICADO | +botones en footer |
+
+
+---
+
+## 17. Seguridad: OTP Verificado + Token HMAC (Fase 1)
+
+### 17.1 Problema de seguridad original
+
+El sistema anterior permitía que **cualquier persona accediera a las tareas de cualquier usuario** solo con saber su email:
+
+| Vulnerabilidad | Impacto |
+|----------------|---------|
+| `GET /api/tasks?userEmail=victima@gmail.com` | Leía TODAS las tareas sin autenticación |
+| `POST /register` con email ajeno | Sobreescribía el deviceId de la víctima (hijack) |
+| `GET /api/tasks` sin parámetros | Volcado completo de la base de datos (`findAll`) |
+| `PUT`/`DELETE` sin ownership | Cualquiera borraba o modificaba tareas ajenas |
+| `java.util.Random()` para códigos | Generador predecible |
+| Sin rate limit en `/send-code` | Email bombing |
+| Código no invalidado tras uso | Reutilizable en ventana de 10 min |
+
+### 17.2 Arquitectura de seguridad implementada
+
+```
+FLUJO DE AUTENTICACIÓN:
+                                              
+  Usuario                Frontend                    Backend
+    │                       │                          │
+    │  1. Ingresa email     │                          │
+    │──────────────────────>│  POST /auth/register     │
+    │                       │─────────────────────────>│
+    │                       │  Crea usuario (verified=false)
+    │                       │  Genera código SecureRandom
+    │                       │  Envía código por email (async)
+    │                       │<─────────────────────────│
+    │  2. Recibe código     │                          │
+    │  3. Ingresa código    │                          │
+    │──────────────────────>│  POST /auth/verify-code  │
+    │                       │─────────────────────────>│
+    │                       │  Valida código + expiración
+    │                       │  Invalida código (single-use)
+    │                       │  Set verified=true        │
+    │                       │  Genera token HMAC-SHA256 │
+    │                       │<─────────────────────────│
+    │                       │  Guarda token en localStorage
+    │                       │                          │
+    │  4. CRUD tareas        │  Authorization: Bearer   │
+    │──────────────────────>│  <token>                  │
+    │                       │─────────────────────────>│
+    │                       │  AuthFilter valida token  │
+    │                       │  Extrae email del token   │
+    │                       │  Filtra/ownership por email
+    │                       │<─────────────────────────│
+```
+
+### 17.3 Token HMAC-SHA256 (TokenService.java)
+
+Token firmado sin dependencias externas, usando `javax.crypto`:
+
+- **Payload**: `email.expiryTimestamp` (base64url)
+- **Firma**: HMAC-SHA256 del payload con `jwt.secret`
+- **Formato**: `base64url(payload) + "." + base64url(signature)`
+- **Expiración**: 24 horas (`jwt.expiration=86400000`)
+- **Validación**: Comparación constant-time (previene timing attacks)
+
+```java
+// Crear token
+String payload = email + "." + exp;
+String signature = hmac(payload);
+return base64url(payload) + "." + base64url(signature);
+
+// Validar token
+// 1. Separar por último "." (el email contiene puntos)
+// 2. Verificar firma HMAC
+// 3. Verificar expiración
+// 4. Retornar email o null
+```
+
+### 17.4 AuthFilter.java
+
+Servlet filter que protege todos los endpoints `/api/tasks/*`:
+
+- Lee header `Authorization: Bearer <token>`
+- Valida token con `TokenService`
+- **401** si no hay token o es inválido
+- Pasa requests **OPTIONS** (CORS preflight) sin validar
+- Almacena email en `request.setAttribute()` para que el controller lo use
+
+### 17.5 TaskController con ownership
+
+| Endpoint | Protección |
+|----------|-----------|
+| `GET /api/tasks` | 401 sin token; retorna solo tareas del email del token |
+| `GET /api/tasks/{id}` | 403 si la tarea no pertenece al email del token |
+| `POST /api/tasks` | Asigna `userEmail` del token automáticamente |
+| `PUT /api/tasks/{id}` | 403 si la tarea no pertenece al email del token |
+| `DELETE /api/tasks/{id}` | 403 si la tarea no pertenece al email del token |
+
+**Eliminado**: `findAll()` como fallback (ya no existe volcado de BD).
+
+### 17.6 AuthController endurecido
+
+| Endpoint | Mejora de seguridad |
+|----------|-------------------|
+| `/register` | Respuesta uniforme (anti-enumeración), NO sobreescribe deviceId, envía código |
+| `/send-code` | Respuesta uniforme aunque email no exista, rate limit 3/15min |
+| `/verify-code` | Código invalidado tras uso (single-use), retorna token HMAC |
+
+**Rate limit**: `ConcurrentHashMap<email, Deque<timestamp>>` — máximo 3 envíos por email cada 15 minutos.
+
+**Código**: `SecureRandom` (no predecible) de 6 dígitos, expira en 10 minutos.
+
+### 17.7 Flujo en el frontend
+
+| Paso | localStorage | Backend |
+|------|-------------|---------|
+| Sin email | `planner_tasks_local` | Sin conexión |
+| Vincular email | → código → `planner_auth_token` + `planner_user_email` | Register → Verify → Token |
+| Con token | `planner_auth_token` | `Authorization: Bearer <token>` en todos los fetch |
+| Token expira | Se limpia token | 401 → alerta "Sesión expirada" |
+| Desvincular | Limpia email + token | Vuelve a localStorage |
+
+### 17.8 Pruebas de seguridad realizadas
+
+| # | Prueba | Resultado |
+|---|--------|-----------|
+| 1 | `GET /api/tasks` sin token | **401** ✅ |
+| 2 | `GET /api/tasks` con token falso | **401** ✅ |
+| 3 | `POST /verify-code` código correcto | **200 + token** ✅ |
+| 4 | `GET /api/tasks` con token válido | **200, solo sus tareas** ✅ |
+| 5 | `POST /api/tasks` con token | **201, creado** ✅ |
+| 6 | `GET` tras crear | **1 tarea** ✅ |
+| 7 | Código reutilizado | **400** ✅ |
+| 8 | `GET /tasks/{id}` propia | **200** ✅ |
+| 9 | `GET /tasks/{id}` ajena | **403** ✅ |
+| 10 | `PUT /tasks/{id}` ajena | **403** ✅ |
+| 11 | `DELETE /tasks/{id}` ajena | **403** ✅ |
+| 12 | Atacante `GET /tasks` | **0 tareas (solo las suyas)** ✅ |
+| 13 | Rate limit (3er intento) | **429** ✅ |
+| 14 | Email inexistente en send-code | **200 uniforme** ✅ |
+
+### 17.9 Archivos nuevos/modificados
+
+| Archivo | Estado | Descripción |
+|---------|--------|-------------|
+| `TokenService.java` | NUEVO | HMAC-SHA256 token create/validate |
+| `AuthFilter.java` | NUEVO | Filtra `/api/tasks/*` por Authorization header |
+| `User.java` | MODIFICADO | +campo `verified` (boolean) |
+| `AuthController.java` | MODIFICADO | SecureRandom, rate limit, single-use, token |
+| `TaskController.java` | MODIFICADO | Email del token, ownership checks, sin findAll |
+| `TaskRepository.java` | MODIFICADO | `@Query` explícitos |
+| `application.properties` | MODIFICADO | +`open-in-view=false` |
+| `taskManager.js` | MODIFICADO | Token en localStorage, Authorization header |
+| `index.js` | MODIFICADO | Flujo OTP: email → código → token |
+
+### 17.10 Bugs encontrados y corregidos durante pruebas
+
+1. **Email síncrono bloqueaba endpoints**: `sendRecoveryCode()` colgaba el request → corregido con `new Thread()` (async)
+2. **TokenService split con emails**: `payload.split("\\.")` retornaba 3 partes con emails como `user@test.com` → corregido con `lastIndexOf('.')`
+3. **CORS preflight bloqueado**: AuthFilter rechazaba OPTIONS → corregido con `if ("OPTIONS".equalsIgnoreCase(method))`
