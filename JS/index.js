@@ -464,19 +464,26 @@ document.getElementById('emailBadge').addEventListener('click', async () => {
     }
 });
 
-async function pedirCodigoVerificacion(email, resendCallback) {
+async function pedirCodigoVerificacion(email, resendCallback, demoCode) {
     let reenviando = false;
     let timer;
+
+    const avisoDemo = demoCode
+        ? `<div style="background:#fff3cd; border:1px solid #ffc107; border-radius:8px; padding:8px 10px; margin-bottom:10px; font-size:0.82em; color:#664d03; text-align:left;">
+               <b>MODO DEMO</b> — este entorno no envía correo real (Render bloquea SMTP).<br>
+               Tu código: <b style="font-size:1.15em; letter-spacing:0.12em;">${demoCode}</b>
+           </div>`
+        : `<p style="font-size:0.85em; color:#888; margin:5px 0;">
+               Revisa tu email <b>${email}</b>.<br>
+               Si no lo ves, revisa la carpeta <b>Spam</b> o <b>Correo no deseado</b>
+           </p>`;
 
     const result = await Swal.fire({
         title: 'Código de verificación',
         html: `
-            <p>Revisa tu email <b>${email}</b></p>
-            <p style="font-size:0.85em; color:#888; margin:5px 0;">
-                Si no lo ves, revisa la carpeta <b>Spam</b> o <b>Correo no deseado</b>
-            </p>
+            ${avisoDemo}
             <input id="swal-code-input" type="text" maxlength="6"
-                placeholder="000000"
+                placeholder="000000" value="${demoCode || ''}"
                 style="text-align:center; font-size:1.8em; letter-spacing:0.4em; width:200px;
                        border:2px solid #7c3aed; border-radius:8px; padding:8px; outline:none;">
             <p id="swal-countdown" style="font-size:0.8em; color:#aaa; margin-top:8px;">
@@ -531,8 +538,8 @@ async function pedirCodigoVerificacion(email, resendCallback) {
 
     if (result.isDenied && resendCallback && !reenviando) {
         reenviando = true;
-        await resendCallback();
-        return await pedirCodigoVerificacion(email, resendCallback);
+        const nuevoDemoCode = await resendCallback();
+        return await pedirCodigoVerificacion(email, resendCallback, nuevoDemoCode || null);
     }
 
     return result.value;
@@ -568,7 +575,8 @@ document.getElementById('btnNavVincular').addEventListener('click', async () => 
             icon: r.success ? 'success' : 'error',
             title: r.success ? 'Código reenviado' : (r.message || 'No se pudo reenviar')
         });
-    });
+        return r.demoCode || null;
+    }, registro.demoCode || null);
     if (!code) return;
 
     const login = await taskManager.verifyAndLogin(email, code);
@@ -616,7 +624,8 @@ document.getElementById('btnNavRecuperar').addEventListener('click', async () =>
             icon: r.success ? 'success' : 'error',
             title: r.success ? 'Código reenviado' : (r.message || 'No se pudo reenviar')
         });
-    });
+        return r.demoCode || null;
+    }, enviado.demoCode || null);
     if (!code) return;
 
     const login = await taskManager.verifyAndLogin(email, code);

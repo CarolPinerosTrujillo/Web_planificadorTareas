@@ -274,7 +274,7 @@ class TaskManager {
             });
             if (response.ok) {
                 const data = await response.json();
-                return { success: true, message: data.message };
+                return { success: true, message: data.message, demoCode: data.demoCode || null };
             }
             const err = await response.json();
             return { success: false, message: err.error };
@@ -295,7 +295,11 @@ class TaskManager {
                 const err = await response.json();
                 return { success: false, message: err.error };
             }
-            return { success: response.ok };
+            if (response.ok) {
+                const data = await response.json();
+                return { success: true, demoCode: data.demoCode || null };
+            }
+            return { success: false, message: 'No se pudo enviar el código' };
         } catch (error) {
             console.error('Error de red al enviar código:', error.message);
             return { success: false, message: 'Error de conexión' };
