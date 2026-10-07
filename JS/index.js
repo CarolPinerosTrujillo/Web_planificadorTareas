@@ -496,13 +496,13 @@ async function pedirCodigoVerificacion(email, resendCallback, demoCode, verifyCa
         showDenyButton: true,
         denyButtonText: 'Reenviar código',
         allowOutsideClick: false,
+        allowEscapeKey: false,
         didOpen: () => {
             const input = document.getElementById('swal-code-input');
             input.focus();
             input.addEventListener('input', () => {
                 input.value = input.value.replace(/\D/g, '');
-                const vm = document.querySelector('.swal2-validation-message');
-                if (vm) vm.innerHTML = '';
+                Swal.resetValidationMessage();
             });
             input.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') Swal.clickConfirm();
@@ -538,12 +538,14 @@ async function pedirCodigoVerificacion(email, resendCallback, demoCode, verifyCa
                 const res = await verifyCallback(code);
                 if (!res || !res.success) {
                     Swal.showValidationMessage((res && res.message ? res.message : 'Código incorrecto') + ' — intenta de nuevo');
+                    const inp = document.getElementById('swal-code-input');
+                    if (inp) inp.focus();
                     return false;
                 }
+                Swal.resetValidationMessage();
             }
             return code;
-        },
-        denyConfirm: () => false
+        }
     });
 
     if (result.isDenied && resendCallback && !reenviando) {
