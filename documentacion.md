@@ -1953,3 +1953,21 @@ El campo `demoCode` **solo aparece** cuando `demoMode=true` y el envío falla. E
 - ✅ FASE 1: backend `de7c4cc` + frontend `026f64f` (Brevo API + modo demo)
 - ✅ FASE 3: 11 pruebas API automatizadas + documentación
 - ⏳ FASE 2: cuenta Brevo + variables en Render (la hace el usuario)
+
+### 18.8 Bug: modal OTP quedaba pegado en "Verificando..." (corregido)
+
+**Síntoma reportado:** al ingresar el código correcto el modal no se cerraba y quedaba en "Verificando..."; un segundo clic devolvía **400** (código ya usado); al cerrar con ESC, las tareas aparecían "sin pedir código".
+
+**Causa raíz** (en `buttons-handlers.js` de SweetAlert2 v11):
+```js
+if (isVisible(getValidationMessage()) || preConfirmValue === false) {
+    // el popup NO se cierra
+} else { succeedWith(...) }
+```
+`preConfirm` mostraba "Verificando..." y **nunca lo limpiaba** al tener éxito → SweetAlert2 veía el mensaje visible y **no cerraba el modal aunque la verificación hubiera sido exitosa** (el token ya se había guardado, de ahí las tareas "sin código").
+
+**Correcciones (`b99ee24`):**
+1. `Swal.resetValidationMessage()` antes de retornar el código en el éxito → el modal cierra correctamente
+2. Eliminado `denyConfirm` (parámetro inexistente en SweetAlert2 v11, generaba warning)
+3. Al fallar: re-enfoque del input; al escribir: `Swal.resetValidationMessage()` (antes dejaba la caja de error vacía visible)
+4. `allowEscapeKey: false` → el modal OTP ya no se cierra accidentalmente con ESC (solo Cancelar o código correcto)
