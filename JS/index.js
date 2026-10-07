@@ -464,7 +464,7 @@ document.getElementById('emailBadge').addEventListener('click', async () => {
     }
 });
 
-async function pedirCodigoVerificacion(email, resendCallback, demoCode) {
+async function pedirCodigoVerificacion(email, resendCallback, demoCode, verifyCallback) {
     let reenviando = false;
     let timer;
 
@@ -501,6 +501,8 @@ async function pedirCodigoVerificacion(email, resendCallback, demoCode) {
             input.focus();
             input.addEventListener('input', () => {
                 input.value = input.value.replace(/\D/g, '');
+                const vm = document.querySelector('.swal2-validation-message');
+                if (vm) vm.innerHTML = '';
             });
             input.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') Swal.clickConfirm();
@@ -524,12 +526,20 @@ async function pedirCodigoVerificacion(email, resendCallback, demoCode) {
         willClose: () => {
             if (timer) clearInterval(timer);
         },
-        preConfirm: () => {
+        preConfirm: async () => {
             const input = document.getElementById('swal-code-input');
             const code = input ? input.value : '';
             if (!code || code.length !== 6) {
                 Swal.showValidationMessage('El código debe tener 6 dígitos');
                 return false;
+            }
+            if (verifyCallback) {
+                Swal.showValidationMessage('Verificando...');
+                const res = await verifyCallback(code);
+                if (!res || !res.success) {
+                    Swal.showValidationMessage((res && res.message ? res.message : 'Código incorrecto') + ' — intenta de nuevo');
+                    return false;
+                }
             }
             return code;
         },
@@ -539,7 +549,7 @@ async function pedirCodigoVerificacion(email, resendCallback, demoCode) {
     if (result.isDenied && resendCallback && !reenviando) {
         reenviando = true;
         const nuevoDemoCode = await resendCallback();
-        return await pedirCodigoVerificacion(email, resendCallback, nuevoDemoCode || null);
+        return await pedirCodigoVerificacion(email, resendCallback, nuevoDemoCode || null, verifyCallback);
     }
 
     return result.value;
@@ -568,6 +578,7 @@ document.getElementById('btnNavVincular').addEventListener('click', async () => 
         return;
     }
 
+    let loginOk = false;
     const code = await pedirCodigoVerificacion(email, async () => {
         const r = await taskManager.registerEmail(email);
         Swal.fire({
@@ -576,14 +587,12 @@ document.getElementById('btnNavVincular').addEventListener('click', async () => 
             title: r.success ? 'Código reenviado' : (r.message || 'No se pudo reenviar')
         });
         return r.demoCode || null;
-    }, registro.demoCode || null);
-    if (!code) return;
-
-    const login = await taskManager.verifyAndLogin(email, code);
-    if (!login.success) {
-        Swal.fire('Error', login.message || 'Código incorrecto o expirado', 'error');
-        return;
-    }
+    }, registro.demoCode || null, async (c) => {
+        const login = await taskManager.verifyAndLogin(email, c);
+        loginOk = login.success;
+        return { success: login.success, message: login.message || 'Código incorrecto o expirado' };
+    });
+    if (!code || !loginOk) return;
 
     await taskManager.migrateLocalToBackend();
     actualizarEmailBadge();
@@ -617,6 +626,7 @@ document.getElementById('btnNavRecuperar').addEventListener('click', async () =>
         return;
     }
 
+    let loginOk = false;
     const code = await pedirCodigoVerificacion(email, async () => {
         const r = await taskManager.sendRecoveryCode(email);
         Swal.fire({
@@ -625,14 +635,12 @@ document.getElementById('btnNavRecuperar').addEventListener('click', async () =>
             title: r.success ? 'Código reenviado' : (r.message || 'No se pudo reenviar')
         });
         return r.demoCode || null;
-    }, enviado.demoCode || null);
-    if (!code) return;
-
-    const login = await taskManager.verifyAndLogin(email, code);
-    if (!login.success) {
-        Swal.fire('Error', login.message || 'Código incorrecto o expirado', 'error');
-        return;
-    }
+    }, enviado.demoCode || null, async (c) => {
+        const login = await taskManager.verifyAndLogin(email, c);
+        loginOk = login.success;
+        return { success: login.success, message: login.message || 'Código incorrecto o expirado' };
+    });
+    if (!code || !loginOk) return;
 
     actualizarEmailBadge();
     await taskManager.load();
