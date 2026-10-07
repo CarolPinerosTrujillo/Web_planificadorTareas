@@ -39,6 +39,8 @@ Puedes visualizar la versión actual del proyecto aquí:
 
 👉 **https://carolpinerostrujillo.github.io/Web_planificadorTareas/**
 
+> 📩 **Modo demo de verificación por email:** el backend está configurado para no enviar correos reales; al registrarte, el **código de verificación aparece en pantalla** (banner amarillo "MODO DEMO") para que puedas probar el flujo completo sin bandeja de entrada.
+
 ---
 
 ## Funcionalidades
@@ -53,6 +55,9 @@ Puedes visualizar la versión actual del proyecto aquí:
 - Reloj en tiempo real
 - Diseño responsivo con Bootstrap 5
 - Persistencia de datos en base de datos PostgreSQL vía API REST
+- Vinculación de dispositivo con verificación por **código OTP de 6 dígitos enviado por email**
+- Recuperación de acceso por email (reenvío de código)
+- Migración automática de tareas locales (localStorage) al vincular la cuenta
 
 ---
 
@@ -67,6 +72,7 @@ Puedes visualizar la versión actual del proyecto aquí:
 | SweetAlert2 | Alertas y confirmaciones visuales |
 | Spring Boot | Backend REST API ([repo](https://github.com/CarolPinerosTrujillo/PlannerAppCP_Backend)) |
 | PostgreSQL | Base de datos relacional |
+| Brevo API | Envío de emails OTP por HTTPS (API key) |
 | Git & GitHub | Control de versiones |
 
 ---
@@ -91,10 +97,13 @@ Puedes visualizar la versión actual del proyecto aquí:
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
-| GET | `/api/tasks` | Obtener todas las tareas |
+| GET | `/api/tasks` | Obtener las tareas del usuario (requiere token) |
 | POST | `/api/tasks` | Crear una tarea |
 | PUT | `/api/tasks/{id}` | Actualizar una tarea |
 | DELETE | `/api/tasks/{id}` | Eliminar una tarea |
+| POST | `/api/auth/register` | Registrar/vincular email (envía código OTP) |
+| POST | `/api/auth/send-code` | Reenviar código OTP (rate limit 3/15 min) |
+| POST | `/api/auth/verify-code` | Validar código OTP y obtener token HMAC |
 
 ---
 
