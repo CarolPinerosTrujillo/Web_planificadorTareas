@@ -21,6 +21,9 @@ Guía completa para dev junior. Cada sección explica **qué se hizo**, **dónde
 13. [Plan Futuro](#13-plan-futuro)
 14. [Cambios CSS — Colores, Footer, Hover](#14-cambios-css--colores-footer-hover)
 15. [Despliegue — Supabase + Render + GitHub Pages](#15-despliegue--supabase--render--github-pages)
+16. [Device ID + Email Recovery (20 Sept 2026)](#16-device-id--email-recovery-sesión-20-sept-2026)
+17. [Seguridad: OTP Verificado + Token HMAC](#17-seuridad-otp-verificado--token-hmac-fase-1)
+18. [Email OTP vía Brevo API + Modo Demo (6 Oct 2026)](#18-email-otp-vía-brevo-api--modo-demo-sesión-6-oct-2026)
 
 ---
 
@@ -1852,3 +1855,101 @@ Servlet filter que protege todos los endpoints `/api/tasks/*`:
 1. **Email síncrono bloqueaba endpoints**: `sendRecoveryCode()` colgaba el request → corregido con `new Thread()` (async)
 2. **TokenService split con emails**: `payload.split("\\.")` retornaba 3 partes con emails como `user@test.com` → corregido con `lastIndexOf('.')`
 3. **CORS preflight bloqueado**: AuthFilter rechazaba OPTIONS → corregido con `if ("OPTIONS".equalsIgnoreCase(method))`
+
+---
+
+## 18. Email OTP vía Brevo API + Modo Demo (Sesión 6 Oct 2026)
+
+### 18.1 El problema: Render free bloquea el envío SMTP
+
+**Síntoma:** el código de verificación nunca llegaba al correo, aunque las credenciales de Gmail (App Password) eran correctas.
+
+**Log de Render:**
+```
+MailConnectException: Couldn't connect to host, port: smtp.gmail.com, 587; timeout 10000
+SocketTimeoutException: Connect timed out
+```
+La conexión TCP **ni siquiera llega a autenticarse** → no es problema de credenciales.
+
+**Causa raíz (oficial):** Render Changelog 2025-09-16:
+> "Free web services will no longer allow outbound traffic to SMTP ports... **25, 465, and 587**. Live across all regions by Friday, September 26th."
+
+Fuente: https://render.com/changelog/free-web-services-will-no-longer-allow-outbound-traffic-to-smtp-ports
+
+⚠️ **Ningún cambio de configuración SMTP lo arregla** en plan FREE. Solo hay dos caminos: API HTTPS (Brevo) o servicios de email externos.
+
+### 18.2 Decisión: Brevo API (HTTPS) + Modo Demo combinados
+
+| Opción | Descripción |
+|--------|-------------|
+| **Opción A — Brevo API** | Envío real por `POST https://api.brevo.com/v3/smtp/email` (HTTPS, puerto 443, **no bloqueado**). Requiere cuenta Brevo + API key |
+| **Opción B — Modo Demo** | Si no hay API key, el backend **no envía correo** y devuelve el código OTP en la respuesta (`demoCode`) para pruebas |
+
+**Implementadas las DOS** (`demoMode=true` por defecto): la app funciona desde el primer despliegue y se activa el envío real solo al configurar `EMAIL_API_KEY` en Render.
+
+#### Nota de seguridad (queda documentada)
+En modo demo **el código OTP se expone en la respuesta JSON**. Riesgo mitigado con: rate limit (3 envíos / 15 min por email), código de 6 dígitos con expiración de 10 min y uso único. **Antes de producción: `EMAIL_DEMO_MODE=false` + `EMAIL_API_KEY` real.**
+
+### 18.3 Cambios en el Backend (`de7c4cc`)
+
+| Archivo | Cambio |
+|---------|--------|
+| `pom.xml` | Eliminado `spring-boot-starter-mail` (ya no se usa SMTP) |
+| `application.properties` | Eliminadas todas las `spring.mail.*`; nuevas: `email.api-key=${EMAIL_API_KEY:}`, `email.from=${EMAIL_FROM:...}`, `email.demo-mode=${EMAIL_DEMO_MODE:true}` |
+| `EmailService.java` | Reescrito: llamada HTTPS a Brevo API con `RestClient` (timeouts 8s), retorna `boolean`, log con SLF4J |
+| `AuthController.java` | Envío **síncrono** (HTTPS es rápido, se quitó `new Thread`), helper `respuestaEnvio()` que agrega `demoCode` solo si el envío falló y `demoMode=true`; el registro ahora genera código también para usuarios ya verificados |
+
+**Respuesta con modo demo:**
+```json
+{"message": "Si el email es válido, recibirás un código de verificación", "demoCode": "279022"}
+```
+El campo `demoCode` **solo aparece** cuando `demoMode=true` y el envío falla. El texto de `message` no cambia (anti-enumeración).
+
+**Variables de entorno (Render):**
+
+| Variable | Default | Descripción |
+|----------|---------|-------------|
+| `EMAIL_API_KEY` | *(vacío)* | API key de Brevo. Vacío ⇒ modo demo |
+| `EMAIL_FROM` | `PlannerApp <no-reply@plannerapp.demo>` | Remitente (debe estar verificado en Brevo) |
+| `EMAIL_DEMO_MODE` | `true` | `false` en producción |
+
+### 18.4 Cambios en el Frontend (`026f64f`)
+
+| Archivo | Cambio |
+|---------|--------|
+| `taskManager.js` | `registerEmail()` y `sendRecoveryCode()` ahora devuelven `demoCode: data.demoCode \|\| null` |
+| `index.js` | Nueva función `pedirCodigoVerificacion(email, resendCallback, demoCode)`: si hay `demoCode` muestra **banner ámbar "MODO DEMO"** y **prellena** el input del código; el reenvío propaga el nuevo código |
+
+### 18.5 Pruebas E2E — API (11/11 ✅)
+
+| # | Prueba | Resultado |
+|---|--------|-----------|
+| 1 | `verify-code` con `demoCode` → token | **200 + token** ✅ |
+| 2 | `GET /api/tasks` con token | **200** ✅ |
+| 3 | `GET` sin token | **401** ✅ |
+| 4 | Token inválido | **401** ✅ |
+| 5 | Código reutilizado | **400** ✅ |
+| 6 | Código incorrecto | **400** ✅ |
+| 7 | Rate limit (4to envío) | **429** ✅ |
+| 8 | Crear tarea con token A | **201** ✅ |
+| 9 | `PUT` tarea ajena (token B) | **403** ✅ |
+| 10 | `DELETE` tarea ajena (token B) | **403** ✅ |
+| 11 | `send-code` email inexistente | **200 uniforme, sin `demoCode`** ✅ |
+
+### 18.6 Configuración de Brevo (FASE 2 — pendiente)
+
+1. Crear cuenta en https://www.brevo.com (gratis, ~500 emails/día)
+2. **Senders** → agregar y verificar el remitente (ej. `carolpy25m@gmail.com`)
+3. **SMTP & API** → crear **API key**
+4. En **Render** → Environment → agregar:
+   - `EMAIL_API_KEY` = `<tu-api-key>`
+   - `EMAIL_FROM` = `Tu Nombre <tu-remisor@verificado.com>`
+   - `EMAIL_DEMO_MODE` = `false`
+5. Guardar (Render redespliega solo) y probar registro con correo real
+
+### 18.7 Resumen de la sesión
+
+- ✅ Diagnóstico: bloqueo SMTP de Render free (causa raíz, con fuente oficial)
+- ✅ FASE 1: backend `de7c4cc` + frontend `026f64f` (Brevo API + modo demo)
+- ✅ FASE 3: 11 pruebas API automatizadas + documentación
+- ⏳ FASE 2: cuenta Brevo + variables en Render (la hace el usuario)
