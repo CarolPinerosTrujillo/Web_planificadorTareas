@@ -1971,3 +1971,15 @@ if (isVisible(getValidationMessage()) || preConfirmValue === false) {
 2. Eliminado `denyConfirm` (parámetro inexistente en SweetAlert2 v11, generaba warning)
 3. Al fallar: re-enfoque del input; al escribir: `Swal.resetValidationMessage()` (antes dejaba la caja de error vacía visible)
 4. `allowEscapeKey: false` → el modal OTP ya no se cierra accidentalmente con ESC (solo Cancelar o código correcto)
+
+### 18.9 Bug: emails sensibles a mayúsculas generaban cuentas duplicadas (corregido)
+
+**Síntoma:** "Recuperar tareas" no enviaba correo. **Causa:** `findByEmail()` era sensible a mayúsculas — si el usuario vinculaba `Cuenta@X.com` y recuperaba con `cuenta@x.com`, no encontraba el usuario y devolvía la respuesta uniforme **sin enviar nada** (además se creaban usuarios duplicados con las tareas separadas).
+
+**Evidencia en BD:** `constanza.w@hotmail.com` y `CONSTANZA.W@HOtmail.com` existían como 2 usuarios (ids 3 y 19) con 1 tarea cada uno.
+
+**Correcciones:**
+1. **Backend `24fb899`**: helper `normalizeEmail()` (`trim().toLowerCase()`) aplicado en `register`, `send-code` y `verify-code`
+2. **Datos**: tarea del duplicado fusionada al email correcto, `device_id` actualizado y usuario extra eliminado (3 usuarios limpios)
+
+**Verificación E2E:** `send-code` con `CONSTANZA.W@HOtmail.com` → código generado en la fila minúscula; `verify-code` en mayúsculas → **200 + token** con `email=constanza.w@hotmail.com` normalizado.
