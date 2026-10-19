@@ -39,7 +39,7 @@ Puedes visualizar la versión actual del proyecto aquí:
 
 👉 **https://carolpinerostrujillo.github.io/Web_planificadorTareas/**
 
-> 📩 **Modo demo de verificación por email:** el backend está configurado para no enviar correos reales; al registrarte, el **código de verificación aparece en pantalla** (banner amarillo "MODO DEMO") para que puedas probar el flujo completo sin bandeja de entrada.
+> 📩 **Verificación por correo real:** al vincular tu email recibirás un **código OTP de 6 dígitos** en tu bandeja de entrada (servicio Brevo). Si no lo ves, revisa la carpeta **Spam / Correo no deseado**.
 
 ---
 
@@ -72,7 +72,7 @@ Puedes visualizar la versión actual del proyecto aquí:
 | SweetAlert2 | Alertas y confirmaciones visuales |
 | Spring Boot | Backend REST API ([repo](https://github.com/CarolPinerosTrujillo/PlannerAppCP_Backend)) |
 | PostgreSQL | Base de datos relacional |
-| Brevo API | Envío de emails OTP por HTTPS (API key) |
+| Brevo API | Envío de emails OTP por API HTTPS (el plan gratuito de Render bloquea el SMTP) |
 | Git & GitHub | Control de versiones |
 
 ---
@@ -119,9 +119,10 @@ WEB_PlanificadorTareas/
 │   └── index.js            # Controlador, eventos y manipulación del DOM
 ├── img/
 │   └── (iconos e imágenes)
+├── documentacion.md        # Documentación técnica detallada
 ├── .gitignore
 ├── LICENSE
-└── README.md
+└── readme.md
 ```
 
 ---
