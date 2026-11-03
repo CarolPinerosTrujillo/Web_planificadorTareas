@@ -40,6 +40,8 @@ Puedes visualizar la versión actual del proyecto aquí:
 👉 **https://carolpinerostrujillo.github.io/Web_planificadorTareas/**
 
 > 📩 **Verificación por correo real:** al vincular tu email recibirás un **código OTP de 6 dígitos** en tu bandeja de entrada (servicio Brevo). Si no lo ves, revisa la carpeta **Spam / Correo no deseado**.
+>
+> ⏳ **Primera carga lenta (~1 min):** el backend corre en el plan gratuito de Render y se duerme tras 15 min sin actividad. Si la demo lleva un rato sin usarse, la primera petición tarda unos segundos en despertarlo; después carga normal.
 
 ---
 
