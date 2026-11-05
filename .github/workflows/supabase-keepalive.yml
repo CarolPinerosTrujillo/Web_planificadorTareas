@@ -1,0 +1,48 @@
+name: Supabase keep-alive
+
+# Supabase pausa los proyectos gratuitos tras ~1 semana sin actividad.
+# Este workflow ejecuta un SELECT 1 dos veces por semana para mantenerlo activo.
+# NO llama a Render: el backend puede seguir durmiendo sin gastar horas del plan free.
+
+on:
+  schedule:
+    # Lunes y jueves a las 06:00 UTC (01:00 en Colombia)
+    - cron: "0 6 * * 1,4"
+  workflow_dispatch: # permite ejecutarlo manualmente desde la pestaña Actions
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-keepalive
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    name: SELECT 1 en Supabase
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Validar que los secretos existan
+        env:
+          DB_HOST: ${{ secrets.SUPABASE_DB_HOST }}
+          DB_USER: ${{ secrets.SUPABASE_DB_USER }}
+          DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          if [ -z "$DB_HOST" ] || [ -z "$DB_USER" ] || [ -z "$DB_PASSWORD" ]; then
+            echo "::error::Faltan secretos. Configura SUPABASE_DB_HOST, SUPABASE_DB_USER y SUPABASE_DB_PASSWORD en Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
+      - name: Despertar el proyecto y comprobar la conexión
+        env:
+          PGHOST: ${{ secrets.SUPABASE_DB_HOST }}
+          PGUSER: ${{ secrets.SUPABASE_DB_USER }}
+          PGPASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          PGDATABASE: postgres
+          PGCONNECT_TIMEOUT: 15
+        run: |
+          psql "host=$PGHOST port=5432 dbname=$PGDATABASE user=$PGUSER sslmode=require" \
+            -v ON_ERROR_STOP=1 \
+            -c "SELECT 'keep-alive ok' AS estado, now() AS ejecutado_en;"
