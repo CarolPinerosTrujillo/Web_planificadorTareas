@@ -2000,3 +2000,26 @@ El backend corre en el plan gratuito de Render, que suspende la instancia tras u
 4. El aviso se oculta en `finally`, tanto si la carga termina bien como si falla.
 
 **Nota operativa:** Supabase pausa los proyectos gratuitos tras ~1 semana sin actividad. Si la BD se pausa, el backend no arranca y la página se queda esperando. Restaurar el proyecto en el dashboard de Supabase y redesplegar/reiniciar Render.
+
+### 18.11 Keep-alive de Supabase con GitHub Actions
+
+**Motivo:** Supabase pausa los proyectos gratuitos tras ~1 semana sin actividad. Al pausarse, el backend de Render no puede arrancar (falla la conexion a la BD) y la web se queda esperando indefinidamente. Ocurrio entre el 19-oct y el 5-nov de 2026 (18 dias de inactividad).
+
+**Solucion (`4dd311a`):** workflow `.github/workflows/supabase-keepalive.yml`:
+- Ejecuta `SELECT 1` directo contra Supabase **dos veces por semana** (lunes y jueves, 06:00 UTC).
+- Tambien se puede lanzar manualmente con `workflow_dispatch`.
+- **No llama a Render**, por lo que no consume horas del plan free.
+- Falla con un mensaje claro si faltan los secretos.
+- Usa `sslmode=require` y `PGCONNECT_TIMEOUT=15`.
+
+**Secretos requeridos** (GitHub > Settings > Secrets and variables > Actions):
+- `SUPABASE_DB_HOST` — host del pooler (p. ej. `aws-0-us-east-2.pooler.supabase.com`)
+- `SUPABASE_DB_USER` — `postgres.<project-ref>`
+- `SUPABASE_DB_PASSWORD` — contraseña de la BD
+
+**Coste:** $0. En repos publicos los minutos de GitHub Actions son gratis. El job dura ~30 s.
+
+**Limitaciones:**
+- GitHub desactiva los workflows programados tras 60 dias sin actividad en el repositorio; se reactivan con un clic en Actions.
+- Si se rota la contraseña o cambia el host del pooler, actualizar los secretos.
+- Si el proyecto ya esta pausado, este workflow no puede reactivarlo: hay que restaurarlo desde el dashboard de Supabase.
