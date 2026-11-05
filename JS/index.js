@@ -19,14 +19,77 @@ let categoriaActual = "TODAS";
 let filtroFecha = null;
 let taskEditandoId = null;
 
+// ===== Aviso de conexión (solo informativo: NUNCA cancela ni aborta la petición) =====
+let avisoConexionTimer = null;
+let avisoConexionLento = null;
+
+function crearAvisoConexion() {
+    let aviso = document.getElementById('avisoConexion');
+    if (!aviso) {
+        aviso = document.createElement('div');
+        aviso.id = 'avisoConexion';
+        aviso.className = 'aviso-conexion d-none';
+        aviso.setAttribute('role', 'status');
+        aviso.setAttribute('aria-live', 'polite');
+        document.body.appendChild(aviso);
+    }
+    return aviso;
+}
+
+function pintarAvisoConexion(html) {
+    const aviso = crearAvisoConexion();
+    aviso.innerHTML = `<span class="aviso-conexion__spinner" aria-hidden="true"></span><span>${html}</span>`;
+    aviso.classList.remove('d-none');
+}
+
+// Aparece solo si la espera supera 2 s; no cancela nada
+function programarAvisoConexion() {
+    clearTimeout(avisoConexionTimer);
+    clearTimeout(avisoConexionLento);
+    avisoConexionTimer = setTimeout(() => {
+        pintarAvisoConexion('<b>Conectando con el servidor…</b> El backend gratuito de Render entra en reposo tras unos minutos sin actividad; la primera petición puede tardar hasta un minuto en reactivarlo.');
+        avisoConexionLento = setTimeout(() => {
+            pintarAvisoConexion('<b>El servidor está tardando más de lo habitual.</b> Puede estar reiniciándose; seguimos esperando y la página cargará en cuanto responda.');
+        }, 90000);
+    }, 2000);
+}
+
+function ocultarAvisoConexion() {
+    clearTimeout(avisoConexionTimer);
+    clearTimeout(avisoConexionLento);
+    const aviso = document.getElementById('avisoConexion');
+    if (aviso) aviso.classList.add('d-none');
+}
+
+// Modal bloqueante para acciones de correo, con la misma explicación
+function abrirModalConectando() {
+    Swal.fire({
+        title: 'Conectando…',
+        html: '<p style="font-size:.88em;color:#777;margin:10px 0 0;">El servidor gratuito entra en reposo tras unos minutos sin actividad.<br>La primera petición puede tardar hasta un minuto en reactivarlo.</p>',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        didOpen: () => Swal.showLoading()
+    });
+}
+
 const taskManager = new TaskManager();
-taskManager.load().then(() => {
+
+async function cargarTareas() {
+    programarAvisoConexion();
+    try {
+        await taskManager.load();
+    } finally {
+        ocultarAvisoConexion();
+    }
     taskManager.render(filtroActual, categoriaActual, filtroFecha);
     renderMiniCalendar();
     actualizarProgreso();
     actualizarContadoresFiltro();
     actualizarEmailBadge();
-});
+}
+
+cargarTareas();
 
 configurarFecha();
 
@@ -574,7 +637,9 @@ document.getElementById('btnNavVincular').addEventListener('click', async () => 
 
     if (!email) return;
 
+    abrirModalConectando();
     const registro = await taskManager.registerEmail(email);
+    Swal.close();
     if (!registro.success) {
         Swal.fire('Error', registro.message || 'No se pudo enviar el código', 'error');
         return;
@@ -622,7 +687,9 @@ document.getElementById('btnNavRecuperar').addEventListener('click', async () =>
 
     if (!email) return;
 
+    abrirModalConectando();
     const enviado = await taskManager.sendRecoveryCode(email);
+    Swal.close();
     if (!enviado.success) {
         Swal.fire('Error', enviado.message || 'No se pudo enviar el código', 'error');
         return;
