@@ -1983,3 +1983,20 @@ if (isVisible(getValidationMessage()) || preConfirmValue === false) {
 2. **Datos**: tarea del duplicado fusionada al email correcto, `device_id` actualizado y usuario extra eliminado (3 usuarios limpios)
 
 **Verificación E2E:** `send-code` con `CONSTANZA.W@HOtmail.com` → código generado en la fila minúscula; `verify-code` en mayúsculas → **200 + token** con `email=constanza.w@hotmail.com` normalizado.
+
+### 18.10 Aviso de conexión informativo (cold start de Render)
+
+El backend corre en el plan gratuito de Render, que suspende la instancia tras unos minutos de inactividad. La primera petición puede tardar hasta ~1 minuto en reactivarla.
+
+**Problema anterior:** se añadió un timeout de 75 s con `AbortController` que cortaba la petición durante el arranque en frío (`signal is aborted without reason`) y mostraba "Error de conexión". Se revirtió: ahora no se cancela nunca una petición en curso.
+
+**Solución actual (frontend `411c3e8`):**
+1. **Aviso no bloqueante** (`#avisoConexion`) que aparece solo si la espera supera 2 s.
+   - Texto: "Conectando con el servidor… El backend gratuito de Render entra en reposo tras unos minutos sin actividad; la primera petición puede tardar hasta un minuto en reactivarlo."
+   - Si supera 90 s, cambia a: "El servidor está tardando más de lo habitual. Puede estar reiniciándose; seguimos esperando…".
+   - Accesible: `role="status"` + `aria-live="polite"`. No bloquea clics (`pointer-events: none`).
+2. **Modal de conexión** en Vincular/Recuperar con la misma explicación, mientras se espera la respuesta de `register`/`send-code`.
+3. **Sin `AbortController` ni timeouts**: la petición sigue viva hasta que el servidor responde.
+4. El aviso se oculta en `finally`, tanto si la carga termina bien como si falla.
+
+**Nota operativa:** Supabase pausa los proyectos gratuitos tras ~1 semana sin actividad. Si la BD se pausa, el backend no arranca y la página se queda esperando. Restaurar el proyecto en el dashboard de Supabase y redesplegar/reiniciar Render.
