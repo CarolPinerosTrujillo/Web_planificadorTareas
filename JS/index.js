@@ -19,69 +19,14 @@ let categoriaActual = "TODAS";
 let filtroFecha = null;
 let taskEditandoId = null;
 
-// ===== Banner de estado de conexión con el servidor =====
-let bannerTimer = null;
-
-function crearBannerConexion() {
-    let banner = document.getElementById('bannerConexion');
-    if (!banner) {
-        banner = document.createElement('div');
-        banner.id = 'bannerConexion';
-        banner.className = 'banner-conexion d-none';
-        banner.setAttribute('role', 'status');
-        banner.setAttribute('aria-live', 'polite');
-        document.body.appendChild(banner);
-    }
-    return banner;
-}
-
-// Se muestra solo si la espera supera 2 s (sin parpadeo en cargas normales)
-function programarBannerConexion() {
-    clearTimeout(bannerTimer);
-    bannerTimer = setTimeout(() => {
-        const banner = crearBannerConexion();
-        banner.innerHTML = `
-            <span class="banner-conexion__spinner" aria-hidden="true"></span>
-            <span><b>Conectando con el servidor…</b> la primera carga puede tardar hasta 1 minuto.</span>`;
-        banner.classList.remove('d-none');
-    }, 2000);
-}
-
-function ocultarBannerConexion() {
-    clearTimeout(bannerTimer);
-    const banner = document.getElementById('bannerConexion');
-    if (banner) banner.classList.add('d-none');
-}
-
-function mostrarBannerErrorConexion(reintentar) {
-    const banner = crearBannerConexion();
-    banner.innerHTML = `
-        <span><b>No se pudo conectar con el servidor.</b> Verifica tu conexión.</span>
-        <button type="button" class="banner-conexion__btn" id="btnReintentarConexion">Reintentar</button>`;
-    banner.classList.remove('d-none');
-    document.getElementById('btnReintentarConexion').addEventListener('click', () => {
-        banner.classList.add('d-none');
-        reintentar();
-    });
-}
-
 const taskManager = new TaskManager();
-
-async function cargarTareas() {
-    programarBannerConexion();
-    const estado = await taskManager.load();
-    ocultarBannerConexion();
+taskManager.load().then(() => {
     taskManager.render(filtroActual, categoriaActual, filtroFecha);
     renderMiniCalendar();
     actualizarProgreso();
     actualizarContadoresFiltro();
     actualizarEmailBadge();
-    if (estado && estado.ok === false && estado.motivo === 'red') {
-        mostrarBannerErrorConexion(cargarTareas);
-    }
-}
-
-cargarTareas();
+});
 
 configurarFecha();
 
@@ -629,9 +574,7 @@ document.getElementById('btnNavVincular').addEventListener('click', async () => 
 
     if (!email) return;
 
-    Swal.fire({ title: 'Conectando…', allowOutsideClick: false, showConfirmButton: false, didOpen: () => Swal.showLoading() });
     const registro = await taskManager.registerEmail(email);
-    if (Swal.isVisible()) Swal.close();
     if (!registro.success) {
         Swal.fire('Error', registro.message || 'No se pudo enviar el código', 'error');
         return;
@@ -679,9 +622,7 @@ document.getElementById('btnNavRecuperar').addEventListener('click', async () =>
 
     if (!email) return;
 
-    Swal.fire({ title: 'Conectando…', allowOutsideClick: false, showConfirmButton: false, didOpen: () => Swal.showLoading() });
     const enviado = await taskManager.sendRecoveryCode(email);
-    if (Swal.isVisible()) Swal.close();
     if (!enviado.success) {
         Swal.fire('Error', enviado.message || 'No se pudo enviar el código', 'error');
         return;

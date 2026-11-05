@@ -1983,22 +1983,3 @@ if (isVisible(getValidationMessage()) || preConfirmValue === false) {
 2. **Datos**: tarea del duplicado fusionada al email correcto, `device_id` actualizado y usuario extra eliminado (3 usuarios limpios)
 
 **Verificación E2E:** `send-code` con `CONSTANZA.W@HOtmail.com` → código generado en la fila minúscula; `verify-code` en mayúsculas → **200 + token** con `email=constanza.w@hotmail.com` normalizado.
-
-### 18.10 Resiliencia de red y UX de espera (cold start de Render)
-
-El backend corre en el plan gratuito de Render, que duerme la instancia tras 15 min de inactividad. La primera petición puede tardar 60-90 s en despertarlo. Antes, si esa carga fallaba, la app mostraba un tablero vacío identico al de "no hay tareas", sin distinguir entre vacio y error de conexion.
-
-**Cambios (frontend `83e03de`):**
-
-1. **Timeout en todos los fetch** (`fetchConTimeout` en `taskManager.js`): `AbortController` con 75 s por defecto (45 s en `load()`), para no dejar promesas colgadas indefinidamente.
-2. **Carga con reintentos** (`load()`): 3 intentos con backoff de 3 s y 6 s; devuelve `{ ok, modo|motivo }` en lugar de `undefined`.
-3. **Cache de servidor** (`planner_tasks_cache`): al cargar con exito se guarda el ultimo estado conocido en `localStorage`; si los 3 intentos fallan se muestra esa cache en vez de una lista vacia.
-4. **Banner de conexion** (`#bannerConexion`): aviso no bloqueante con spinner que aparece solo si la espera supera 2 s (sin parpadeo en cargas normales). Incluye `role="status"` y `aria-live="polite"` para accesibilidad.
-5. **Estado de error explicito**: si falla por red, el banner muestra "No se pudo conectar con el servidor" con boton **Reintentar** que relanza la carga.
-6. **Loading en Vincular/Recuperar**: `Swal.showLoading()` con "Conectando..." mientras se espera la respuesta de `register`/`send-code`.
-
-**Decisiones:**
-- No se agregaron pings keep-alive ni workflows: el backend duerme y Render lo despierta con la primera visita (ahorra horas del plan free).
-- No se agregan spinners a cada operacion CRUD: solo se cubren los puntos donde el cold start afecta la percepcion inicial.
-
-**Prueba manual sugerida:** con el backend dormido, abrir la demo → debe aparecer el banner "Conectando..." a los 2 s y luego las tareas. Sin red, debe mostrarse la cache + banner de error con Reintentar.

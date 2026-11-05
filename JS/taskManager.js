@@ -2,17 +2,6 @@
 const API_URL = 'https://plannerappcp-backend.onrender.com/api/tasks';
 const AUTH_API = API_URL.replace('/tasks', '/auth');
 
-// fetch con tiempo máximo de espera (evita colgarse si el backend está dormido)
-async function fetchConTimeout(url, opciones = {}, ms = 75000) {
-    const controlador = new AbortController();
-    const reloj = setTimeout(() => controlador.abort(), ms);
-    try {
-        return await fetch(url, { ...opciones, signal: controlador.signal });
-    } finally {
-        clearTimeout(reloj);
-    }
-}
-
 function escapeHtml(texto) {
     if (!texto) return '';
     return texto
@@ -64,25 +53,6 @@ class TaskManager {
         localStorage.setItem('planner_tasks_local', JSON.stringify(this.tasks));
     }
 
-    // Caché de tareas del servidor (solo para mostrar si no hay conexión)
-    saveServerCache() {
-        try {
-            localStorage.setItem('planner_tasks_cache', JSON.stringify(this.tasks));
-        } catch (error) {
-            console.error('No se pudo guardar la caché:', error.message);
-        }
-    }
-
-    loadServerCache() {
-        try {
-            const data = localStorage.getItem('planner_tasks_cache');
-            this.tasks = data ? JSON.parse(data) : [];
-        } catch (error) {
-            console.error('No se pudo leer la caché:', error.message);
-            this.tasks = [];
-        }
-    }
-
     generateLocalId() {
         return Date.now() + Math.floor(Math.random() * 1000);
     }
@@ -93,7 +63,7 @@ class TaskManager {
         const email = this.getLinkedEmail();
         try {
             if (email && this.hasValidSession()) {
-                const response = await fetchConTimeout(API_URL, {
+                const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', ...this.authHeaders() },
                     body: JSON.stringify({
@@ -146,7 +116,7 @@ class TaskManager {
         const email = this.getLinkedEmail();
         try {
             if (email && this.hasValidSession()) {
-                const response = await fetchConTimeout(`${API_URL}/${taskId}`, {
+                const response = await fetch(`${API_URL}/${taskId}`, {
                     method: 'DELETE',
                     headers: this.authHeaders()
                 });
@@ -183,7 +153,7 @@ class TaskManager {
                     prioridad: nuevosDatos.prioridad,
                     status: nuevosDatos.status || (existente ? existente.status : 'PORHACER')
                 };
-                const response = await fetchConTimeout(`${API_URL}/${taskId}`, {
+                const response = await fetch(`${API_URL}/${taskId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', ...this.authHeaders() },
                     body: JSON.stringify(datosAEnviar)
@@ -224,35 +194,29 @@ class TaskManager {
 
     async load() {
         const email = this.getLinkedEmail();
-        if (!(email && this.hasValidSession())) {
-            this.loadLocal();
-            return { ok: true, modo: 'local' };
-        }
-
-        // Sesión vinculada: intentar el servidor con reintentos (el backend puede estar dormido)
-        let ultimoError = '';
-        for (let intento = 1; intento <= 3; intento++) {
-            try {
-                const response = await fetchConTimeout(API_URL, { headers: this.authHeaders() }, 45000);
+        try {
+            if (email && this.hasValidSession()) {
+                const response = await fetch(API_URL, {
+                    headers: this.authHeaders()
+                });
                 if (response.status === 401) {
                     this.handleSessionExpired();
                     this.tasks = [];
-                    return { ok: false, motivo: 'sesion' };
+                    return;
                 }
-                if (response.ok) {
-                    this.tasks = await response.json();
-                    this.saveServerCache();
-                    return { ok: true, modo: 'servidor' };
+                if (!response.ok) {
+                    console.error('Error al cargar tareas');
+                    this.tasks = [];
+                    return;
                 }
-                ultimoError = 'HTTP ' + response.status;
-            } catch (error) {
-                ultimoError = error.name === 'AbortError' ? 'tiempo de espera agotado' : error.message;
+                this.tasks = await response.json();
+            } else {
+                this.loadLocal();
             }
-            if (intento < 3) await new Promise(r => setTimeout(r, intento * 3000));
+        } catch (error) {
+            console.error('Error de red al cargar tareas:', error.message);
+            this.tasks = [];
         }
-        console.error('No se pudo conectar al servidor tras 3 intentos:', ultimoError);
-        this.loadServerCache(); // mostrar último estado conocido en vez de una lista vacía
-        return { ok: false, motivo: 'red', error: ultimoError };
     }
 
     handleSessionExpired() {
@@ -279,7 +243,7 @@ class TaskManager {
         const tareasLocales = JSON.parse(localData);
         for (const tarea of tareasLocales) {
             try {
-                await fetchConTimeout(API_URL, {
+                await fetch(API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', ...this.authHeaders() },
                     body: JSON.stringify({
@@ -303,7 +267,7 @@ class TaskManager {
 
     async registerEmail(email) {
         try {
-            const response = await fetchConTimeout(`${AUTH_API}/register`, {
+            const response = await fetch(`${AUTH_API}/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, deviceId: this.deviceId })
@@ -322,7 +286,7 @@ class TaskManager {
 
     async sendRecoveryCode(email) {
         try {
-            const response = await fetchConTimeout(`${AUTH_API}/send-code`, {
+            const response = await fetch(`${AUTH_API}/send-code`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email })
@@ -344,7 +308,7 @@ class TaskManager {
 
     async verifyAndLogin(email, code) {
         try {
-            const response = await fetchConTimeout(`${AUTH_API}/verify-code`, {
+            const response = await fetch(`${AUTH_API}/verify-code`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, code })
